@@ -1,0 +1,766 @@
+import {
+  AttributionControl,
+  Map as MapLibreMap,
+  Marker,
+  NavigationControl,
+  Popup,
+  setWorkerUrl,
+} from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import {
+  ARMIES,
+  EVENTS,
+  EVENT_TYPES,
+  JAPAN_CRISES,
+  KMT_BLOCKADES,
+  KMT_UNITS,
+  RIVERS,
+  SNOW_CAPS,
+  STORIES,
+  ZONES,
+} from '../mock'
+import { BLOCKADE_COLOR, RIVER_COLOR, ZONE_COLOR } from '../core/constants/colors'
+import { TERRAIN_FOLLOW } from '../core/constants/playback'
+import { MARKER_MODE } from '../core/enums'
+import { DAY_MS, endOfDay, parseDate, positionAt } from '../utils/geo'
+import { inWindow } from '../utils/date'
+import { walkerMarkup } from './icons'
+import { createWovenBannerLayer } from './wovenBanners'
+import { primaryArmyPosition } from './parallel'
+import { createWalkerMotion, resetWalkerMotion, updateWalkerDirection } from './walkerMotion'
+
+setWorkerUrl(workerUrl)
+
+const EARTH_RADIUS_KM = 6371
+const linearEasing = (t) => t
+const followZoomFor = (speed) => TERRAIN_FOLLOW.ZOOMS[speed] || TERRAIN_FOLLOW.ZOOMS[1]
+
+/**
+ * 季节色调（key 见 mock 的 SEASON_TONES）：天空三层与底图饱和/对比随季节推移，
+ * 与画布 sepia 滤镜（styles/map.css .terrain3d-map）叠加后保持羊皮纸基调。
+ */
+const TERRAIN3D_TONES = {
+  autumn: { sky: '#7f98b4', horizon: '#ecdcba', fog: '#d8c6a0', fogBlend: 0.22, saturation: -0.1, contrast: 0.02 },
+  winter: { sky: '#8ba0b8', horizon: '#e6e4dc', fog: '#cdd0cb', fogBlend: 0.34, saturation: -0.5, contrast: 0.03 },
+  spring: { sky: '#86a4bb', horizon: '#eee0bc', fog: '#dcc9a2', fogBlend: 0.2, saturation: 0.1, contrast: 0.03 },
+  summer: { sky: '#7c9cbe', horizon: '#f0dcae', fog: '#dcc49a', fogBlend: 0.2, saturation: 0.18, contrast: 0.05 },
+  rain: { sky: '#5c6a76', horizon: '#aaa48f', fog: '#938c79', fogBlend: 0.6, saturation: -0.55, contrast: 0.1 },
+  highland: { sky: '#708cae', horizon: '#e9e2cc', fog: '#d3ccb8', fogBlend: 0.3, saturation: -0.32, contrast: 0.06 },
+}
+
+function skySpec(tone) {
+  const c = TERRAIN3D_TONES[tone] || TERRAIN3D_TONES.autumn
+  return {
+    'sky-color': c.sky,
+    'horizon-color': c.horizon,
+    'fog-color': c.fog,
+    'sky-horizon-blend': 0.7,
+    'horizon-fog-blend': 0.6,
+    'fog-ground-blend': c.fogBlend,
+  }
+}
+
+/** exaggeration 为场景级地形夸张：俯瞰宜平实，近景山地拉高显脊线 */
+export const TERRAIN3D_SCENES = [
+  { key: 'overview', center: [106.5, 32.5], zoom: 4.5, bearing: 0, pitch: 54, exaggeration: 1.35 },
+  { key: 'jiajin', center: [102.65, 30.72], zoom: 8, bearing: 15, pitch: 66, exaggeration: 1.8 },
+  { key: 'grassland', center: [103.2, 33.15], zoom: 7.7, bearing: 0, pitch: 66, exaggeration: 1.55 },
+]
+
+/** 标记分级缩放：低于此缩放只显 major 事件并隐藏态势点，防俯瞰视野标记堆叠 */
+const MARKER_DETAIL_ZOOM = 6
+
+function feature(geometry, properties) {
+  return { type: 'Feature', geometry, properties }
+}
+
+function collection(features = []) {
+  return { type: 'FeatureCollection', features }
+}
+
+function circleCoordinates({ lat, lng, radius }) {
+  const lat1 = (lat * Math.PI) / 180
+  const lng1 = (lng * Math.PI) / 180
+  const angularDistance = radius / EARTH_RADIUS_KM
+  const points = []
+  for (let i = 0; i <= 48; i++) {
+    const bearing = (i / 48) * Math.PI * 2
+    const lat2 = Math.asin(
+      Math.sin(lat1) * Math.cos(angularDistance) +
+        Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing),
+    )
+    const lng2 =
+      lng1 +
+      Math.atan2(
+        Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
+        Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2),
+      )
+    points.push([(lng2 * 180) / Math.PI, (lat2 * 180) / Math.PI])
+  }
+  return [points]
+}
+
+function makeMarker(className, label, title, color) {
+  const el = document.createElement('button')
+  el.type = 'button'
+  el.className = className
+  el.textContent = label
+  el.title = title
+  if (color) el.style.setProperty('--marker-color', color)
+  return el
+}
+
+function dateKey(time) {
+  return Math.floor((time + 8 * 60 * 60 * 1000) / 86400000)
+}
+
+/** fill 层无模糊属性：三圈同心雪斑外淡内浓叠出羽化（rest 常态 / storm 风雪时段） */
+const SNOW_BANDS = [
+  { id: 'snow-caps-outer', scale: 1, color: '#e6eef7', rest: 0.24, storm: 0.46 },
+  { id: 'snow-caps-mid', scale: 0.74, color: '#f0f6fb', rest: 0.3, storm: 0.56 },
+  { id: 'snow-caps-core', scale: 0.5, color: '#f9fcfe', rest: 0.38, storm: 0.72 },
+]
+
+/** 积雪斑几何：圆基 + 顶点确定性扰动（各圈同扰动保嵌套），读作自然雪面而非规整圆 */
+function snowBlob(cap, scale) {
+  const ring = circleCoordinates({ lat: cap.lat, lng: cap.lng, radius: cap.radius * scale })[0]
+  const phase = cap.lat * 3.1 + cap.lng * 2.2
+  return [
+    ring.map(([lng, lat], i) => {
+      const w = 1 + 0.13 * Math.sin(i * 2.7 + phase) + 0.07 * Math.sin(i * 5.3 + phase * 1.7)
+      return [cap.lng + (lng - cap.lng) * w, cap.lat + (lat - cap.lat) * w]
+    }),
+  ]
+}
+
+function maxPitchForViewport(height) {
+  if (height < 420) return 36
+  if (height < 560) return 45
+  return 82
+}
+
+function tilesFor(basemap) {
+  if (!basemap.options.subdomains) return [basemap.url]
+  return basemap.options.subdomains.map((subdomain) => basemap.url.replace('{s}', subdomain))
+}
+
+export function createTerrain3D(
+  container,
+  { routes, basemaps, basemap, tone, t, onReady, onUserMove, onEventLecture, onEventPlay, onProgress },
+) {
+  const map = new MapLibreMap({
+    container,
+    center: TERRAIN3D_SCENES[0].center,
+    zoom: TERRAIN3D_SCENES[0].zoom,
+    bearing: TERRAIN3D_SCENES[0].bearing,
+    pitch: Math.min(TERRAIN3D_SCENES[0].pitch, maxPitchForViewport(container.clientHeight)),
+    minZoom: 3.5,
+    maxZoom: 14,
+    maxPitch: 82,
+    style: {
+      version: 8,
+      sources: {
+        ...Object.fromEntries(
+          basemaps.map((item) => [
+            `basemap-${item.key}`,
+            {
+              type: 'raster',
+              tiles: tilesFor(item),
+              tileSize: 256,
+              maxzoom: item.options.maxNativeZoom,
+              attribution: item.attribution,
+            },
+          ]),
+        ),
+        terrain: {
+          type: 'raster-dem',
+          tiles: ['https://elevation-tiles-prod.s3.us-east-1.amazonaws.com/terrarium/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          maxzoom: 15,
+          encoding: 'terrarium',
+          attribution: 'Elevation data © AWS Open Data / Tilezen',
+        },
+      },
+      layers: [
+        ...basemaps.map((item) => ({
+          id: `basemap-${item.key}`,
+          type: 'raster',
+          source: `basemap-${item.key}`,
+          layout: { visibility: item.key === basemap ? 'visible' : 'none' },
+          paint: {
+            'raster-saturation': (TERRAIN3D_TONES[tone] || TERRAIN3D_TONES.autumn).saturation,
+            'raster-contrast': (TERRAIN3D_TONES[tone] || TERRAIN3D_TONES.autumn).contrast,
+          },
+        })),
+        {
+          id: 'terrain-hillshade',
+          type: 'hillshade',
+          source: 'terrain',
+          paint: {
+            'hillshade-shadow-color': '#574832',
+            'hillshade-highlight-color': '#fff3d5',
+            'hillshade-accent-color': '#8d7959',
+            'hillshade-exaggeration': 0.5,
+          },
+        },
+      ],
+      terrain: { source: 'terrain', exaggeration: TERRAIN3D_SCENES[0].exaggeration },
+      sky: skySpec(tone),
+    },
+    attributionControl: false,
+  })
+  map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right')
+  map.addControl(new AttributionControl({ compact: true }), 'bottom-right')
+
+  let ready = false
+  let selectedBasemap = basemap
+  let seasonTone = TERRAIN3D_TONES[tone] ? tone : 'autumn'
+  let popup = null
+  let lastSituationKey = ''
+  let lastEventKey = ''
+  let lastArmyVisibility = ''
+  let lastProgressUpdate = -Infinity
+  let lastFollowUpdate = -Infinity
+  let lastFollowSpeed = null
+  let followingArmy = null
+  let followTransitionUntil = 0
+  let followTimer = null
+  let latestFollowState = null
+  let latestFollowPositions = null
+  let latestTime = -Infinity
+  let lastUpdateAt = -Infinity
+  let lastTime = -Infinity
+  const eventMarkers = []
+  const situationMarkers = []
+  const armyMarkers = new Map()
+  let bannerLayer = null
+  const progressIndexes = Object.fromEntries(ARMIES.map((army) => [army.key, -1]))
+
+  function closePopup() {
+    popup?.remove()
+    popup = null
+  }
+
+  function setBasemap(key) {
+    selectedBasemap = basemaps.some((item) => item.key === key) ? key : basemaps[0].key
+    if (!ready) return
+    for (const item of basemaps) {
+      map.setLayoutProperty(`basemap-${item.key}`, 'visibility', item.key === selectedBasemap ? 'visible' : 'none')
+    }
+  }
+
+  function applySeasonTone() {
+    map.setSky(skySpec(seasonTone))
+    const c = TERRAIN3D_TONES[seasonTone]
+    for (const item of basemaps) {
+      map.setPaintProperty(`basemap-${item.key}`, 'raster-saturation', c.saturation)
+      map.setPaintProperty(`basemap-${item.key}`, 'raster-contrast', c.contrast)
+    }
+  }
+
+  function setSeason(next) {
+    const key = TERRAIN3D_TONES[next] ? next : 'autumn'
+    if (key === seasonTone) return
+    seasonTone = key
+    if (ready) applySeasonTone()
+  }
+
+  let snowStorm = false
+
+  function applySnowCaps() {
+    if (!ready) return
+    // 风雪时段雪面整体提亮（paint 默认过渡约 300ms 平滑换档）
+    for (const band of SNOW_BANDS) {
+      map.setPaintProperty(band.id, 'fill-opacity', snowStorm ? band.storm : band.rest)
+    }
+  }
+
+  function setSnowStorm(active) {
+    if (active === snowStorm) return
+    snowStorm = active
+    applySnowCaps()
+  }
+
+  function addPopup(item, lngLat, event = null) {
+    closePopup()
+    const root = document.createElement('div')
+    root.className = 'terrain3d-popup-content'
+    const title = document.createElement('h3')
+    title.textContent = item.name
+    root.append(title)
+    const meta = document.createElement('div')
+    meta.className = 'terrain3d-popup-meta'
+    meta.textContent = [item.dateLabel, item.place].filter(Boolean).join(' · ')
+    root.append(meta)
+    const description = document.createElement('p')
+    description.textContent = item.desc || ''
+    root.append(description)
+    if (event) {
+      const actions = document.createElement('div')
+      actions.className = 'terrain3d-popup-actions'
+      const lecture = document.createElement('button')
+      lecture.type = 'button'
+      lecture.textContent = t('terrain3d.openLecture')
+      lecture.addEventListener('click', () => onEventLecture(event))
+      const continueFrom = document.createElement('button')
+      continueFrom.type = 'button'
+      continueFrom.textContent = t('terrain3d.playFromHere')
+      continueFrom.addEventListener('click', () => {
+        closePopup()
+        onEventPlay(event)
+      })
+      actions.append(lecture, continueFrom)
+      root.append(actions)
+    }
+    popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '340px', className: 'terrain3d-popup' })
+      .setLngLat(lngLat)
+      .setDOMContent(root)
+      .addTo(map)
+  }
+
+  function addPointMarkers() {
+    EVENTS.forEach((event) => {
+      const type = EVENT_TYPES[event.type] || EVENT_TYPES.battle
+      const element = makeMarker('terrain3d-event-marker', type.mark, `${event.dateLabel} · ${event.name}`, type.color)
+      const marker = new Marker({ element, anchor: 'bottom' }).setLngLat([event.lng, event.lat]).addTo(map)
+      element.addEventListener('click', (e) => {
+        e.stopPropagation()
+        addPopup(event, [event.lng, event.lat], event)
+      })
+      eventMarkers.push({ event, marker, element })
+    })
+
+    const entries = [
+      ...KMT_UNITS.map((item) => ({ item, group: 'kmt', label: item.short, className: 'terrain3d-context-marker kmt-marker', color: '#536b79' })),
+      ...JAPAN_CRISES.map((item) => ({ item, group: 'japan', label: '日', className: 'terrain3d-context-marker japan-marker', color: '#8e2020' })),
+      ...STORIES.map((item) => ({ item, group: 'stories', label: '书', className: 'terrain3d-context-marker story-marker', color: '#c9922e' })),
+    ]
+    entries.forEach(({ item, group, label, className, color }) => {
+      const element = makeMarker(className, label, item.name, color)
+      const marker = new Marker({ element, anchor: 'bottom' }).setLngLat([item.lng, item.lat]).addTo(map)
+      element.addEventListener('click', (e) => {
+        e.stopPropagation()
+        addPopup(item, [item.lng, item.lat])
+      })
+      situationMarkers.push({
+        group,
+        item,
+        marker,
+        element,
+        from: parseDate(item.from),
+        to: endOfDay(item.to),
+      })
+    })
+
+    ARMIES.forEach((army) => {
+      const element = document.createElement('div')
+      element.className = 'terrain3d-army-marker'
+      element.title = army.name
+      element.innerHTML = walkerMarkup(army)
+      armyMarkers.set(army.key, {
+        marker: new Marker({ element, anchor: 'bottom' }),
+        walker: element.querySelector('.walker'),
+        lean: element.querySelector('.w-lean'),
+        motion: createWalkerMotion(),
+      })
+    })
+  }
+
+  function addDataLayers() {
+    // 雪线层最先挂载：贴地形渲染于底图/晕渲之上、态势与路线之下
+    for (const band of SNOW_BANDS) {
+      map.addSource(band.id, {
+        type: 'geojson',
+        data: collection(
+          SNOW_CAPS.map((cap) =>
+            feature({ type: 'Polygon', coordinates: snowBlob(cap, band.scale) }, { id: cap.id }),
+          ),
+        ),
+      })
+      map.addLayer({
+        id: band.id,
+        type: 'fill',
+        source: band.id,
+        paint: { 'fill-color': band.color, 'fill-opacity': band.rest },
+      })
+    }
+    map.addSource('army-routes', {
+      type: 'geojson',
+      data: collection(
+        ARMIES.map((army) =>
+          feature(
+            {
+              type: 'LineString',
+              coordinates: routes[army.key].pts.map((point) => [point.lng, point.lat]),
+            },
+            { key: army.key, color: army.color },
+          ),
+        ),
+      ),
+    })
+    map.addSource('army-progress', { type: 'geojson', data: collection() })
+    map.addSource('situation-zones', { type: 'geojson', data: collection() })
+    map.addSource('situation-lines', { type: 'geojson', data: collection() })
+
+    map.addLayer({
+      id: 'situation-zones-fill',
+      type: 'fill',
+      source: 'situation-zones',
+      paint: { 'fill-color': ZONE_COLOR, 'fill-opacity': 0.12 },
+    })
+    map.addLayer({
+      id: 'situation-zones-line',
+      type: 'line',
+      source: 'situation-zones',
+      paint: { 'line-color': ZONE_COLOR, 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [2, 2] },
+    })
+    map.addLayer({
+      id: 'situation-blockades',
+      type: 'line',
+      source: 'situation-lines',
+      filter: ['==', ['get', 'kind'], 'blockade'],
+      paint: { 'line-color': BLOCKADE_COLOR, 'line-width': 4, 'line-opacity': 0.85, 'line-dasharray': [2, 2] },
+    })
+    map.addLayer({
+      id: 'situation-rivers',
+      type: 'line',
+      source: 'situation-lines',
+      filter: ['==', ['get', 'kind'], 'river'],
+      paint: { 'line-color': RIVER_COLOR, 'line-width': 2.5, 'line-opacity': 0.8 },
+    })
+
+    ARMIES.forEach((army) => {
+      map.addLayer({
+        id: `army-route-${army.key}`,
+        type: 'line',
+        source: 'army-routes',
+        filter: ['==', ['get', 'key'], army.key],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': army.color,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.4, 8, 2.8, 12, 4],
+          'line-opacity': 0.58,
+        },
+      })
+    })
+    map.addLayer({
+      id: 'army-progress-casing',
+      type: 'line',
+      source: 'army-progress',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': '#fff9e9',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 4, 3, 8, 6, 12, 8],
+        'line-opacity': 0.9,
+      },
+    })
+    map.addLayer({
+      id: 'army-progress-line',
+      type: 'line',
+      source: 'army-progress',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.8, 8, 4, 12, 6],
+        'line-opacity': 1,
+      },
+    })
+    map.on('click', 'situation-zones-fill', (e) => {
+      const item = ZONES.find((zone) => zone.id === e.features?.[0]?.properties?.id)
+      if (item) addPopup(item, e.lngLat.toArray())
+    })
+    map.on('click', 'situation-blockades', (e) => {
+      const item = KMT_BLOCKADES.find((line) => line.id === e.features?.[0]?.properties?.id)
+      if (item) addPopup(item, e.lngLat.toArray())
+    })
+    map.on('click', 'situation-rivers', (e) => {
+      const item = RIVERS.find((river) => river.name === e.features?.[0]?.properties?.name)
+      if (item) addPopup({ ...item, dateLabel: '长征沿途江河要津', desc: '长征途中红军跋涉渡过的大江大河——一条大河就是一道雄关。' }, e.lngLat.toArray())
+    })
+    for (const layer of ['situation-zones-fill', 'situation-blockades', 'situation-rivers']) {
+      map.on('mouseenter', layer, () => {
+        map.getCanvas().style.cursor = 'pointer'
+      })
+      map.on('mouseleave', layer, () => {
+        map.getCanvas().style.cursor = ''
+      })
+    }
+  }
+
+  function updateSituation(time, visibility) {
+    const detail = map.getZoom() >= MARKER_DETAIL_ZOOM
+    const key = `${dateKey(time)}:${detail}:${visibility.zones}:${visibility.kmt}:${visibility.japan}:${visibility.stories}:${visibility.rivers}`
+    if (key === lastSituationKey) return
+    lastSituationKey = key
+    const zones = visibility.zones
+      ? ZONES.filter((item) => inWindow(item.from, item.to, time)).map((item) =>
+          feature(
+            { type: 'Polygon', coordinates: circleCoordinates(item) },
+            { id: item.id, name: item.name },
+          ),
+        )
+      : []
+    const lines = [
+      ...(visibility.kmt
+        ? KMT_BLOCKADES.filter((item) => inWindow(item.from, item.to, time)).map((item) =>
+            feature(
+              { type: 'LineString', coordinates: item.latlngs.map(([lat, lng]) => [lng, lat]) },
+              { id: item.id, name: item.name, kind: 'blockade' },
+            ),
+          )
+        : []),
+      ...(visibility.rivers
+        ? RIVERS.map((item) =>
+            feature(
+              { type: 'LineString', coordinates: item.pts.map(([lat, lng]) => [lng, lat]) },
+              { name: item.name, kind: 'river' },
+            ),
+          )
+        : []),
+    ]
+    map.getSource('situation-zones')?.setData(collection(zones))
+    map.getSource('situation-lines')?.setData(collection(lines))
+    for (const marker of situationMarkers) {
+      const visible =
+        detail &&
+        visibility[marker.group] &&
+        marker.from <= time &&
+        time <= marker.to
+      marker.element.style.display = visible ? '' : 'none'
+    }
+  }
+
+  function updateEventMarkers(time, markerMode, panelEvent, visibleArmies) {
+    const detail = map.getZoom() >= MARKER_DETAIL_ZOOM
+    const key = `${dateKey(time)}:${detail}:${markerMode}:${panelEvent?.id || ''}:${ARMIES.map((army) => visibleArmies[army.key]).join('')}`
+    if (key === lastEventKey) return
+    lastEventKey = key
+    for (const { event, element } of eventMarkers) {
+      const passed = parseDate(event.date) <= time
+      const armyOn = event.army === 'all' || visibleArmies[event.army]
+      const focus = event.id === panelEvent?.id
+      const tiered = detail || event.major || focus
+      const visible = armyOn && tiered && (markerMode === MARKER_MODE.ALL || passed || focus)
+      element.style.display = visible ? '' : 'none'
+      element.classList.toggle('future', !passed)
+    }
+  }
+
+  function syncArmyVisibility(visibleArmies) {
+    const key = ARMIES.map((army) => visibleArmies[army.key]).join('')
+    if (key === lastArmyVisibility) return
+    lastArmyVisibility = key
+    for (const army of ARMIES) {
+      const visibility = visibleArmies[army.key] ? 'visible' : 'none'
+      map.setLayoutProperty(`army-route-${army.key}`, 'visibility', visibility)
+      const { marker } = armyMarkers.get(army.key)
+      if (!visibleArmies[army.key]) marker.remove()
+    }
+  }
+
+  function updateProgress(time, state, now) {
+    const positions = {}
+    const progressFeatures = []
+    for (const army of ARMIES) {
+      const route = routes[army.key]
+      const position = positionAt(route, time, { noTravel: true })
+      positions[army.key] = position
+      const { marker, walker, lean, motion } = armyMarkers.get(army.key)
+      if (position.started && state.armyVisible[army.key]) {
+        if (time < lastTime || time - lastTime > 14 * DAY_MS) resetWalkerMotion(motion)
+        if (motion.lastHead) {
+          const previous = map.project([motion.lastHead[1], motion.lastHead[0]])
+          const current = map.project([position.head[1], position.head[0]])
+          updateWalkerDirection(motion, current.x - previous.x, current.y - previous.y)
+        }
+        motion.lastHead = position.head
+        const walking = state.playing && !position.done
+        walker.classList.toggle('walking', walking)
+        walker.classList.toggle('done', position.done)
+        lean.style.transform = `scaleX(${motion.dir}) rotate(${motion.dir * (walking ? 10 : 0)}deg)`
+        marker.setLngLat([position.head[1], position.head[0]])
+        if (!marker.getElement().isConnected) marker.addTo(map)
+        if (now - lastProgressUpdate >= 220 || position.idx !== progressIndexes[army.key] || time < lastTime || state.force) {
+          const coordinates = route.pts.slice(0, position.idx).map((point) => [point.lng, point.lat])
+          coordinates.push([position.head[1], position.head[0]])
+          if (coordinates.length > 1) {
+            progressFeatures.push(
+              feature(
+                { type: 'LineString', coordinates },
+                { key: army.key, color: army.color },
+              ),
+            )
+          }
+        }
+      } else {
+        marker.remove()
+        resetWalkerMotion(motion)
+      }
+      progressIndexes[army.key] = position.idx
+      onProgress?.(army.key, {
+        started: position.started,
+        done: position.done,
+        pct: route.totalKm > 0 ? Math.round((position.km / route.totalKm) * 100) : 0,
+      })
+    }
+
+    const progressDue = now - lastProgressUpdate >= 220 || time < lastTime || state.force
+    if (progressDue) {
+      map.getSource('army-progress')?.setData(collection(progressFeatures))
+      lastProgressUpdate = now
+    }
+    lastTime = time
+    return positions
+  }
+
+  function updateFollow(positions, state, now, pausedSeek = false) {
+    const target = state.follow && primaryArmyPosition(positions, state.armyVisible, state.selectedArmy)
+    if (!target) {
+      followingArmy = null
+      followTransitionUntil = 0
+      clearTimeout(followTimer)
+      followTimer = null
+      return
+    }
+    const center = [target.head[1], target.head[0]]
+    if (followingArmy !== state.selectedArmy) {
+      followingArmy = state.selectedArmy
+      clearTimeout(followTimer)
+      const options = { center, zoom: followZoomFor(state.speed) }
+      if (document.hidden) {
+        followTransitionUntil = 0
+        map.jumpTo(options)
+      } else {
+        followTransitionUntil = now + TERRAIN_FOLLOW.FOCUS_MS
+        map.flyTo({ ...options, duration: TERRAIN_FOLLOW.FOCUS_MS, essential: true })
+        followTimer = setTimeout(() => {
+          followTimer = null
+          followTransitionUntil = 0
+          if (ready && latestFollowState && latestFollowPositions) {
+            const latestTarget = latestFollowState.follow &&
+              primaryArmyPosition(latestFollowPositions, latestFollowState.armyVisible, latestFollowState.selectedArmy)
+            if ((document.hidden || map.isMoving()) && latestTarget && followingArmy === latestFollowState.selectedArmy) {
+              map.jumpTo({ center: [latestTarget.head[1], latestTarget.head[0]], zoom: followZoomFor(latestFollowState.speed) })
+            }
+            updateFollow(latestFollowPositions, latestFollowState, performance.now())
+          }
+        }, TERRAIN_FOLLOW.FOCUS_MS + 50)
+      }
+      lastFollowSpeed = state.speed
+      lastFollowUpdate = now
+      return
+    }
+    if (pausedSeek) {
+      clearTimeout(followTimer)
+      followTimer = null
+      const zoom = now < followTransitionUntil ? followZoomFor(state.speed) : map.getZoom()
+      followTransitionUntil = 0
+      map.jumpTo({ center, zoom })
+      lastFollowUpdate = now
+      return
+    }
+    // 倍速变更立即补缩放重取景，其余时刻只跟中心、不夺用户缩放
+    const speedChanged = state.speed !== lastFollowSpeed
+    if (now < followTransitionUntil || (!state.force && !speedChanged && now - lastFollowUpdate < TERRAIN_FOLLOW.UPDATE_MS)) return
+    const current = map.getCenter()
+    const drifted = Math.abs(current.lng - center[0]) + Math.abs(current.lat - center[1]) >= 0.00001
+    if (!speedChanged && !drifted) return
+    const options = speedChanged ? { center, zoom: followZoomFor(state.speed) } : { center }
+    if (document.hidden) map.jumpTo(options)
+    else map.easeTo({ ...options, duration: TERRAIN_FOLLOW.EASE_MS, easing: linearEasing, essential: true })
+    lastFollowSpeed = state.speed
+    lastFollowUpdate = now
+  }
+
+  map.on('dragstart', () => onUserMove?.())
+  map.on('move', () => bannerLayer?.updateProjection())
+  // 缩放跨过 MARKER_DETAIL_ZOOM 只换标记层级、不动时间与图层开关，故单独重刷两级缓存
+  map.on('zoomend', () => {
+    if (!ready || !latestFollowState) return
+    lastSituationKey = ''
+    lastEventKey = ''
+    updateSituation(latestTime, latestFollowState.situationVisible)
+    updateEventMarkers(latestTime, latestFollowState.markerMode, latestFollowState.panelEvent, latestFollowState.armyVisible)
+  })
+  map.on('resize', () => {
+    const maxPitch = maxPitchForViewport(container.clientHeight)
+    if (map.getPitch() > maxPitch) map.setPitch(maxPitch)
+  })
+  map.on('load', () => {
+    addDataLayers()
+    addPointMarkers()
+    // 地名锦旗层：共享 WebGL 画布，每面锦旗是一块钉在航点上的小型 Verlet 布料
+    bannerLayer = createWovenBannerLayer({
+      container: map.getCanvasContainer(),
+      sizeEl: map.getContainer(),
+      zIndex: 0,
+      project: (lng, lat) => {
+        const p = map.project([lng, lat])
+        return { x: p.x, y: p.y }
+      },
+    })
+    bannerLayer.setItems(
+      ARMIES.flatMap((army) =>
+        routes[army.key].pts
+          .filter((pt) => pt.label)
+          .map((pt, i) => ({
+            key: `${army.key}-${i}-${pt.label}`,
+            armyKey: army.key,
+            lng: pt.lng,
+            lat: pt.lat,
+            text: pt.label,
+            color: army.color,
+            dateMs: parseDate(pt.date),
+          })),
+      ),
+    )
+    ready = true
+    setBasemap(selectedBasemap)
+    applySeasonTone()
+    applySnowCaps()
+    onReady?.()
+  })
+
+  function update(time, state) {
+    if (!ready) return
+    const now = performance.now()
+    if (!state.force && now - lastUpdateAt < 75) return
+    lastUpdateAt = now
+    syncArmyVisibility(state.armyVisible)
+    bannerLayer?.update(time, state.armyVisible)
+    updateSituation(time, state.situationVisible)
+    updateEventMarkers(time, state.markerMode, state.panelEvent, state.armyVisible)
+    const pausedSeek = !state.playing && !state.panelEvent && Number.isFinite(lastTime) && time !== lastTime
+    const positions = updateProgress(time, state, now)
+    latestTime = time
+    latestFollowState = state
+    latestFollowPositions = positions
+    updateFollow(positions, state, now, pausedSeek)
+  }
+
+  function flyToScene(sceneKey) {
+    const scene = TERRAIN3D_SCENES.find((item) => item.key === sceneKey) || TERRAIN3D_SCENES[0]
+    map.setTerrain({ source: 'terrain', exaggeration: scene.exaggeration })
+    map.flyTo({
+      center: scene.center,
+      zoom: scene.zoom,
+      bearing: scene.bearing,
+      pitch: Math.min(scene.pitch, maxPitchForViewport(container.clientHeight)),
+      duration: 1200,
+    })
+  }
+
+  function destroy() {
+    ready = false
+    clearTimeout(followTimer)
+    closePopup()
+    bannerLayer?.destroy()
+    bannerLayer = null
+    for (const { marker } of eventMarkers) marker.remove()
+    for (const { marker } of situationMarkers) marker.remove()
+    for (const { marker } of armyMarkers.values()) marker.remove()
+    map.remove()
+  }
+
+  return { update, setBasemap, setSeason, setSnowStorm, flyToScene, closePopup, destroy }
+}

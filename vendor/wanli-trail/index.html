@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚩</text></svg>"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="红军长征沙盘演示：四路红军 1934.10–1936.10 全路线交互式 GIS 沙盘" />
+    <title>红军长征沙盘 · 1934–1936</title>
+    <!--
+      #boot 预置启动屏的样式在 src/styles/boot.css（外置，随 index-*.css 一起下发）。
+      此处不再内联 <style>：样式单源在 src/styles/ 分片，组件与页面都不再自带样式块。
+    -->
+  </head>
+  <body>
+    <!--
+      预置启动屏：在 JS 尚未加载/挂载的窗口期先渲染与开场页同款的静态画面，
+      消灭"刷新时短暂露出地图"的首帧闪烁；Vue 挂载完成后由 main.js 移除本节点。
+      文案为中文静态 HTML（不是 Vue 模板，t() 管不到），故不键化。
+    -->
+    <div id="boot" aria-hidden="true">
+      <div class="b-star">★</div>
+      <div class="b-title">红军长征</div>
+      <div class="b-sub">伟大的战略转移 · 1934.10 — 1936.10</div>
+      <div class="b-tip">正在铺开沙盘 …</div>
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
