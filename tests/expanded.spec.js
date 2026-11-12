@@ -1,5 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
+import {CASES,SOURCES} from '../js/catalog.js';
+import {caseLength} from '../js/case-details.js';
 
 test('全国人物可按地区和主题组合筛选，刷新保留筛选',async({page})=>{
   await page.goto('/#/people');await expect(page.locator('.person-card')).toHaveCount(25);
@@ -55,12 +57,50 @@ test('全国地标筛选、人物详情与故事来源相互关联',async({page}
   await page.getByRole('link',{name:'走近张桂梅'}).click();await expect(page.locator('.person-title h1')).toHaveText('张桂梅');
 });
 
-test('典型工程案例包含难题、方法、成果、实践与来源',async({page})=>{
+test('九篇案例可完整阅读、按目录定位并导出全部正文与出处',async({page})=>{
+  test.setTimeout(90000);
   await page.goto('/#/cases');await expect(page.locator('.case-card')).toHaveCount(9);
-  await page.locator('.case-card').first().click();await expect(page.locator('.article-section')).toHaveCount(3);
+  await page.locator('.case-card').first().click();await expect(page.locator('h1')).toHaveText(CASES[0].title);
+  for(const c of CASES){
+    await page.goto('/#/case/'+c.id);
+    await expect(page.locator('h1')).toHaveText(c.title);
+    await expect(page.locator('.article-section')).toHaveCount(c.sections.length);
+    const paragraphs=await page.locator('.article-section > p').allTextContents();
+    expect(paragraphs).toEqual(c.sections.flatMap(s=>s.paragraphs));
+    expect(paragraphs.join('').length).toBeGreaterThanOrEqual(1500);
+    await expect(page.locator('.case-detail > header')).toContainText(String(caseLength(c))+' 字');
+    await expect(page.locator('.case-timeline li')).toHaveCount(c.timeline.length);
+    await expect(page.locator('.case-body > .original-reading a')).toHaveCount(c.sourceIds.length);
+    await expect(page.locator('.case-section-sources')).toHaveCount(c.sections.length);
+    await expect(page.locator('.copyright-notice')).toContainText('如侵犯版权，请联系管理员进行删除');
+    await page.getByRole('navigation',{name:'案例目录'}).getByRole('button').last().click();
+    await expect(page.locator('.article-section').last().locator('h2')).toBeInViewport();
+    const pending=page.waitForEvent('download');
+    await page.getByRole('button',{name:'导出完整案例'}).first().click();
+    const downloaded=await pending;const text=await readFile(await downloaded.path(),'utf8');
+    for(const p of paragraphs)expect(text).toContain(p);
+    for(const t of c.timeline)expect(text).toContain(t.year+'：'+t.event);
+    for(const id of c.sourceIds){const s=SOURCES.find(s=>s.id===id);expect(text).toContain(s.url);expect(text).toContain(s.date);}
+    expect(text).toContain('## 资料来源与完整原文');
+  }
   await expect(page.locator('.case-lessons')).toContainText('试着做一做');
   await expect(page.locator('.source-line a').first()).toHaveAttribute('href',/^https:\/\//);
   await page.getByRole('link',{name:'开始我的攻关计划'}).click();await expect(page.locator('#challenge-form')).toBeVisible();
+});
+
+test('九篇案例在手机、平板、桌面与部署子路径中无溢出或脚本错误',async({page})=>{
+  test.setTimeout(90000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  for(const width of [320,390,768,1440]){
+    await page.setViewportSize({width,height:900});
+    for(const c of CASES){
+      await page.goto('http://127.0.0.1:4174/zhengtu-xinhuo/#/case/'+c.id);
+      await expect(page.locator('h1')).toHaveText(c.title);
+      await expect(page.getByRole('navigation',{name:'案例目录'})).toBeVisible();
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),width+' / '+c.id).toBeTruthy();
+    }
+  }
+  expect(errors).toEqual([]);
 });
 
 test('新增页面在手机和GitHub子路径下保持可读并无脚本异常',async({page})=>{

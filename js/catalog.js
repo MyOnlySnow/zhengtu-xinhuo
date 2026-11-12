@@ -8,6 +8,7 @@ import { SDU_STORIES, SDU_SOURCES, SDU_WANG } from './sdu-history.js';
 import { SCIENCE_PORTRAITS } from './science-portraits.js';
 import { PORTRAITS } from './portrait-assets.js';
 import { QINGDAO_OVERRIDES, QINGDAO_SOURCES, QINGDAO_STORIES } from './qingdao-reviewed.js';
+import { CASE_DETAILS, CASE_SOURCES } from './case-details.js';
 
 const CHEN_PROFILE={
   timeline:[{year:'1905',event:'出生于湖南长沙一个农民家庭。'},{year:'1925',event:'加入中国共产党。'},{year:'1927',event:'参加秋收起义，随后投身井冈山及赣南、闽西革命斗争。'},{year:'1934年3月',event:'任红五军团第三十四师师长。'},{year:'1934年10月',event:'随中央红军长征，率部承担全军后卫任务。'},{year:'1934年11—12月',event:'在湘江战役及突围中率部掩护主力，后负伤被俘、壮烈牺牲。'}],
@@ -19,10 +20,10 @@ const CHEN_PROFILE={
 };
 
 const unique = rows => [...new Map(rows.map(r=>[r.id,r])).values()];
-export const SOURCES=unique([...BASE_SOURCES,...SPEECH_SOURCES,...HISTORY_SOURCES,...SCIENCE_SOURCES,...MARCH_SOURCES,...CLASSIC_SOURCES,...SDU_SOURCES,...QINGDAO_SOURCES]);
+export const SOURCES=unique([...BASE_SOURCES,...SPEECH_SOURCES,...HISTORY_SOURCES,...SCIENCE_SOURCES,...MARCH_SOURCES,...CLASSIC_SOURCES,...SDU_SOURCES,...QINGDAO_SOURCES,...CASE_SOURCES]);
 export const PEOPLE=unique([...EXTRA_PEOPLE.map(p=>p.id==='wangganchang'?{...p,...SDU_WANG}:p.id==='chenshuxiang'?{...p,...CHEN_PROFILE}:p),...MARCH_PEOPLE,...HISTORY_PEOPLE,...SCIENCE_PEOPLE]);
 export const STORIES=unique([...BASE_STORIES,...CLASSIC_STORIES,...SDU_STORIES,...MARCH_STORIES,...HISTORY_STORIES,...SCIENCE_STORIES,...QINGDAO_STORIES]);
-export const CASES=SCIENCE_CASES;
+export const CASES=SCIENCE_CASES.map(c=>({...c,...CASE_DETAILS[c.id]}));
 export const LANDMARKS=unique([
   ...MARCH_LANDMARKS,...MARCH_PLACES,
   ...HISTORY_LANDMARKS.map(l=>({...l,theme:HISTORY_PEOPLE.find(p=>(l.people||[]).includes(p.id))?.period||'革命岁月'})),

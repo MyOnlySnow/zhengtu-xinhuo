@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {SOURCES,PEOPLE,STORIES,CASES,LANDMARKS,SPEECHES,normalizePerson,normalizeStory,normalizeLandmark} from '../js/catalog.js';
 import {matchesContent,storySections,storyLength} from '../js/explore.js';
+import {caseLength} from '../js/case-details.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const qd=JSON.parse(await readFile(path.join(root,'js/qingdao.json'),'utf8'));
@@ -45,7 +46,20 @@ for(const place of landmarks){
   assert.ok(Number.isFinite(place.lat)&&Number.isFinite(place.lng)&&place.lat>=18&&place.lat<=54&&place.lng>=73&&place.lng<=135,`地标坐标范围 ${place.id}`);
   assert.ok(place.province&&place.city,`缺少地标地区 ${place.id}`);
 }
-for(const c of CASES){references(c);for(const k of ['problem','method','result'])assert.ok(c[k]?.length>25,`案例信息不足 ${c.id}/${k}`);assert.ok(c.lessons.length>=3&&c.practice.length>=3);for(const id of c.personIds||[])assert.ok(personIds.has(id));}
+for(const c of CASES){
+  references(c);
+  assert.ok(c.sections?.length>=6,`案例缺少完整章节 ${c.id}`);
+  assert.ok(caseLength(c)>=1500,`案例详文不足1500字 ${c.id}`);
+  assert.ok(c.timeline?.length>=5&&c.timeline.every(t=>t.year&&t.event),`案例时间线不完整 ${c.id}`);
+  assert.ok(c.sourceIds.length>=4,`案例多源依据不足 ${c.id}`);
+  for(const sec of c.sections){
+    assert.ok(sec.title&&sec.paragraphs.length>=2,`案例章节不完整 ${c.id}/${sec.title}`);
+    references({...sec,id:`${c.id}/${sec.title}`});
+    assert.ok(sec.sourceIds.every(id=>c.sourceIds.includes(id)),`章节来源未列入案例总来源 ${c.id}`);
+  }
+  assert.ok(c.lessons.length>=3&&c.practice.length>=3);
+  for(const id of c.personIds||[])assert.ok(personIds.has(id));
+}
 for(const s of SPEECHES){assert.ok(s.date&&s.occasion&&s.org&&s.url&&s.points.length===3&&s.questions.length>=2);assert.ok(sourceIds.has(s.id));for(const id of s.relatedStories||[])assert.ok(ids(stories).has(id));}
 assert.equal(people.filter(p=>matchesContent(p,{region:'即墨'})).length,1);
 assert.ok(stories.some(s=>matchesContent(s,{region:'即墨'})),'即墨故事筛选为空');

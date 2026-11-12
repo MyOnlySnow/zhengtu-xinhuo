@@ -261,6 +261,21 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
 .original-panel > p, .case-lessons ul, .case-lessons ol { font-size: 14px; }
 .original-panel > small, .speech-detail header > small { font-size: 12px; color: #827052; }
 .case-content-layout, .speech-read-layout { gap: 50px; grid-template-columns: minmax(0, 1fr) 320px; }
+.case-body { min-width: 0; }
+.case-contents { margin-block: 30px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.case-contents nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px; }
+.case-contents button { text-align: left; }
+.case-timeline { padding: 26px; border: 1px solid #ded2bd; border-radius: 6px; background: #f4efe5; }
+.case-timeline h2 { font-size: 23px; margin-block: 8px 22px; }
+.case-timeline ol { list-style: none; padding: 0; margin: 0; }
+.case-timeline li { border-left: 1px solid #c9b699; position: relative; margin-left: 5px; padding: 0 0 20px 22px; }
+.case-timeline li::before { content: ''; width: 7px; height: 7px; position: absolute; left: -4px; top: 8px; border-radius: 50%; background: #9b3538; }
+.case-timeline li:last-child { padding-bottom: 0; }
+.case-timeline time { color: #923a36; font-size: 13px; font-weight: 700; }
+.case-timeline p { font-size: 14px; line-height: 1.9; margin: 4px 0 0; color: #625849; }
+.case-section-sources { display: flex; flex-direction: column; gap: 7px; border-left: 2px solid #d8c8b0; padding-left: 14px; margin-top: 24px; font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+.case-section-sources > span { color: #877152; }
+.case-body .article-section { scroll-margin-top: 100px; }
 .speech-read-layout.speech-reading-notes { display: block; max-width: 880px; }
 .speech-original { margin-top: 30px; }
 .speech-original > small { display: block; margin-top: 12px; }
