@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/expanded.css">
-  <link rel="stylesheet" href="css/refined.css?v=9">
+  <link rel="stylesheet" href="css/refined.css?v=10">
   <script src="assets/vendor/leaflet/leaflet.js" defer></script>
-  <script type="module" src="js/app.js?v=9"></script>
+  <script type="module" src="js/app.js?v=10"></script>
 </head>
 <body>
   <a class="skip-link" href="#content">跳转到主要内容</a>
@@ -23,17 +23,19 @@
       <nav id="main-nav" aria-label="主导航">
         <div class="nav-item" data-nav="home"><div class="nav-entry"><a href="#/">首页</a></div></div>
         <div class="nav-item" data-nav="study">
-          <div class="nav-entry"><a href="#/study">学思践悟</a><button class="nav-toggle" type="button" aria-label="展开学思践悟菜单" aria-expanded="false" aria-controls="study-menu"><span aria-hidden="true">⌄</span></button></div>
+          <div class="nav-entry"><a href="#/study">学思践悟</a><button class="nav-toggle" type="button" aria-label="展开学思践悟菜单" aria-expanded="false" aria-controls="study-menu"><span aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 6 4 4 4-4"/></svg></span></button></div>
           <div class="nav-dropdown" id="study-menu" hidden>
-            <div class="nav-group"><span>学 · 理论与历史</span><a href="#/speeches">重要讲话</a><a href="#/people">人物故事</a><a href="#/study?tab=stories">故事共读与宣讲</a></div>
-            <div class="nav-group"><span>做 · 实践与体会</span><a href="#/cases">典型案例</a><a href="#/study?tab=practice">科研攻关计划</a><a href="#/study?tab=quiz">研学自测</a><a href="#/notebook">我的研学</a></div>
+            <div class="nav-dropdown-heading"><div><small>学 · 思 · 践 · 悟</small><strong>让每一次学习，走向真实行动</strong></div><span aria-hidden="true">学</span></div>
+            <div class="nav-group"><span>学 · 理论与历史</span><a href="#/speeches" aria-label="重要讲话"><span class="nav-link-title">重要讲话</span><small aria-hidden="true">原文导读 · 理论学习</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/people" aria-label="人物故事"><span class="nav-link-title">人物故事</span><small aria-hidden="true">生平足迹 · 榜样事迹</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/study?tab=stories" aria-label="故事共读与宣讲"><span class="nav-link-title">故事共读与宣讲</span><small aria-hidden="true">完整故事 · 宣讲创作</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a></div>
+            <div class="nav-group"><span>做 · 实践与体会</span><a href="#/cases" aria-label="典型案例"><span class="nav-link-title">典型案例</span><small aria-hidden="true">科研工程 · 攻关过程</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/study?tab=practice" aria-label="科研攻关计划"><span class="nav-link-title">科研攻关计划</span><small aria-hidden="true">提出问题 · 记录验证</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/study?tab=quiz" aria-label="研学自测"><span class="nav-link-title">研学自测</span><small aria-hidden="true">分类练习 · 解析巩固</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/notebook" aria-label="我的研学"><span class="nav-link-title">我的研学</span><small aria-hidden="true">学习体会 · 本机保存</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a></div>
           </div>
         </div>
         <div class="nav-item" data-nav="resources">
-          <div class="nav-entry"><a href="#/resources">拓展资源</a><button class="nav-toggle" type="button" aria-label="展开拓展资源菜单" aria-expanded="false" aria-controls="resources-menu"><span aria-hidden="true">⌄</span></button></div>
+          <div class="nav-entry"><a href="#/trail">拓展资源</a><button class="nav-toggle" type="button" aria-label="展开拓展资源菜单" aria-expanded="false" aria-controls="resources-menu"><span aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 6 4 4 4-4"/></svg></span></button></div>
           <div class="nav-dropdown" id="resources-menu" hidden>
-            <div class="nav-group"><span>地图与数字体验</span><a href="#/trail">四路红军沙盘</a><a href="#/trail?mode=footprints">长征足迹年表</a><a href="#/trail?mode=light">轻量长征路线图</a><a href="#/map">研学地图</a></div>
-            <div class="nav-group"><span>资料与出处</span><a href="#/resources">全部拓展资源</a><a href="#/sources">内容与项目来源</a></div>
+            <div class="nav-dropdown-heading"><div><small>循着足迹 · 继续探索</small><strong>在地图与史料之间，读懂历史</strong></div><span aria-hidden="true">拓</span></div>
+            <div class="nav-group"><span>地图与数字体验</span><a href="#/trail" aria-label="四路红军沙盘"><span class="nav-link-title">四路红军沙盘</span><small aria-hidden="true">行军路线 · 时间轴探索</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/trail?mode=footprints" aria-label="长征足迹年表"><span class="nav-link-title">长征足迹年表</span><small aria-hidden="true">地图联动 · 历史年表</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/trail?mode=light" aria-label="轻量长征路线图"><span class="nav-link-title">轻量长征路线图</span><small aria-hidden="true">九个节点 · 路线播放</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/map" aria-label="研学地图"><span class="nav-link-title">研学地图</span><small aria-hidden="true">地标寻访 · 人物关联</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a></div>
+            <div class="nav-group"><span>资料与出处</span><a href="#/resources" aria-label="全部拓展资源"><span class="nav-link-title">全部拓展资源</span><small aria-hidden="true">站内体验 · 集中浏览</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a><a href="#/sources" aria-label="内容与项目来源"><span class="nav-link-title">内容与项目来源</span><small aria-hidden="true">史料出处 · 归属说明</small><span class="nav-link-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h9M8 4l4 4-4 4"/></svg></span></a></div>
           </div>
         </div>
       </nav>
@@ -41,7 +43,7 @@
   </header>
   <main id="content" tabindex="-1"><div class="loading">正在展开这段征途……</div></main>
   <footer class="site-footer">
-    <div class="container footer-main"><div><a class="footer-brand" href="#/">征途·薪火</a><p>循着信仰的足迹，书写青春的回答。</p><small data-branch></small></div><div class="footer-links"><a href="#/study">学思践悟</a><a href="#/resources">拓展资源</a><a href="#/sources">内容来源</a><a href="#/?section=branch">关于支部</a><a href="#/notebook">研学手记</a></div></div>
+    <div class="container footer-main"><div><a class="footer-brand" href="#/">征途·薪火</a><p>循着信仰的足迹，书写青春的回答。</p><small data-branch></small></div><div class="footer-links"><a href="#/study">学思践悟</a><a href="#/trail">拓展资源</a><a href="#/sources">内容来源</a><a href="#/?section=branch">关于支部</a><a href="#/notebook">研学手记</a></div></div>
     <div class="container footer-bottom"><span>2026 · 学·做在支部</span><span>铭记来时路 · 奋进新征程</span></div>
   </footer>
   <div id="toast" role="status" aria-live="polite"></div>

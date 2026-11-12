@@ -22,7 +22,8 @@ export function syncNavigation(page,query){
     page==='trail'?(query.get('mode')&&query.get('mode')!=='overview'?`#/trail?mode=${query.get('mode')}`:'#/trail'):`#/${page}`;
   for(const item of nav.querySelectorAll('[data-nav]'))item.classList.toggle('active',item.dataset.nav===group);
   for(const a of nav.querySelectorAll('a')){
-    if(a.getAttribute('href')===current)a.setAttribute('aria-current','page');
+    const isRoot=a.closest('.nav-entry');
+    if((isRoot&&a.closest('[data-nav]').dataset.nav===group)||(!isRoot&&a.getAttribute('href')===current))a.setAttribute('aria-current','page');
     else a.removeAttribute('aria-current');
   }
   closeNavigation();
