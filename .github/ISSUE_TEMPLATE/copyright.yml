@@ -1,0 +1,44 @@
+name: 版权反馈
+description: 联系网站管理员，反馈作品权属、署名或删除请求。
+title: "[版权反馈] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请说明涉及的材料及权利归属，便于管理员核实处理。
+        此反馈公开可见，请勿填写身份证件、私密联系方式或未公开的授权文件。
+  - type: textarea
+    id: page
+    attributes:
+      label: 涉及的网站页面
+      description: 请提供本站页面链接及具体位置。
+    validations:
+      required: true
+  - type: textarea
+    id: work
+    attributes:
+      label: 涉及的作品与原始来源
+      description: 请提供作品名称、作者及可公开查阅的原始链接。
+    validations:
+      required: true
+  - type: textarea
+    id: rights
+    attributes:
+      label: 权利归属说明
+      description: 请简述作品权属以及你与作品的关系。
+    validations:
+      required: true
+  - type: dropdown
+    id: request
+    attributes:
+      label: 希望的处理方式
+      options:
+        - 删除涉及材料
+        - 更正作者或来源标注
+        - 其他（请在下方说明）
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: 补充说明

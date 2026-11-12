@@ -228,6 +228,13 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
 .source-line { border-top: 1px solid #d6c8b1; padding-top: 25px; }
 .source-line > p { font-size: 13px; line-height: 1.95; margin-top: 18px; }
 .source-line small { font-size: 11px; color: #877152; }
+.source-line.original-reading { margin: 0 0 32px; padding: 25px 28px; border: 1px solid #ded2bd; border-radius: 7px; background: #f0ece2; }
+.source-line.original-reading > p { margin-top: 15px; }
+.source-line .original-reading-intro { color: #71664f; }
+.story-reading-label { margin-top: 30px; }
+.copyright-notice { border-top: 1px solid var(--line); padding-top: 16px; margin-block: 24px; color: #756b59; font-size: 12px; line-height: 1.9; }
+.copyright-notice p + p { margin-top: 7px; }
+.copyright-notice small { display: block; color: #81735d; font-size: 11px; margin-top: 5px; }
 .discussion, .soft-callout { border-radius: 7px; padding: 27px; }
 .discussion p, .soft-callout p { font-size: 14px; line-height: 1.95; }
 .story-text figcaption { font-size: 11px; line-height: 1.8; }
@@ -254,6 +261,14 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
 .original-panel > p, .case-lessons ul, .case-lessons ol { font-size: 14px; }
 .original-panel > small, .speech-detail header > small { font-size: 12px; color: #827052; }
 .case-content-layout, .speech-read-layout { gap: 50px; grid-template-columns: minmax(0, 1fr) 320px; }
+.speech-read-layout.speech-reading-notes { display: block; max-width: 880px; }
+.speech-original { margin-top: 30px; }
+.speech-original > small { display: block; margin-top: 12px; }
+.speech-original-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 24px; margin-top: 22px; }
+.speech-original-actions .button { width: auto; }
+.speech-original-actions .read-toggle { min-height: 42px; padding: 8px 14px; margin: 0; }
+.speech-original .copyright-notice { margin-bottom: 0; }
+.speech-feature > .text-link { color: #f6e2c5; display: inline-block; margin-left: 24px; }
 .case-detail header > small { font-size: 12px; color: #837055; }
 
 /* 长征沙盘的页面外壳 */
@@ -551,6 +566,10 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
   .source-line > strong { font-size: 21px; }
   .source-line > p { font-size: 13px; }
   .source-line small { font-size: 11px; }
+  .source-line.original-reading { padding: 21px; }
+  .copyright-notice .text-link { font-size: 12px; }
+  .speech-feature > .text-link { display: block; margin: 18px 0 0; }
+  .speech-original-actions .button { width: 100%; }
   .discussion, .soft-callout { padding: 23px; }
   .discussion p, .soft-callout p { font-size: 14px; }
   .person-hero { align-items: start; gap: 20px; }

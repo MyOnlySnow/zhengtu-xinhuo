@@ -18,6 +18,9 @@ test('七篇长征故事以完整章节呈现并可导出全部正文',async({pa
     expect(await page.locator('.article-section').count()).toBeGreaterThanOrEqual(6);
     const text=await page.locator('.article-section').allTextContents();expect(text.join('').length).toBeGreaterThan(1500);
     expect(await page.locator('.story-text>.source-line a').count()).toBeGreaterThanOrEqual(4);
+    await expect(page.locator('.story-text > .original-reading')).toBeVisible();
+    expect(await page.locator('.original-reading').evaluate(el=>el.compareDocumentPosition(document.querySelector('.article-section')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
+    await expect(page.locator('.copyright-notice')).toContainText('如侵犯版权，请联系管理员进行删除');
     await expect(page.locator('.article-contents button')).toHaveCount(await page.locator('.article-section').count());
   }
   const pending=page.waitForEvent('download');await page.getByRole('button',{name:'导出完整研学稿'}).click();const d=await pending;
@@ -36,6 +39,8 @@ test('讲话栏目包含日期、场合、官方原文、导读和已读记忆',
   await page.goto('/#/speech/speech-scientists');await expect(page.locator('h1')).toContainText('在科学家座谈会上的讲话');
   await expect(page.locator('.speech-detail>header')).toContainText('2020-09-11');
   await expect(page.getByRole('link',{name:'打开官方完整原文'})).toHaveAttribute('href','https://www.cac.gov.cn/2020-09/11/c_1601383688531304.htm');
+  expect(await page.locator('.speech-original').evaluate(el=>el.compareDocumentPosition(document.querySelector('.speech-reading-notes')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
+  await expect(page.locator('.speech-original .copyright-notice a')).toHaveAttribute('href','https://github.com/MyOnlySnow/zhengtu-xinhuo/issues/new?template=copyright.yml');
   await expect(page.locator('.speech-points li')).toHaveCount(3);
   await page.getByRole('button',{name:'标记已读',exact:true}).click();await page.reload();
   await expect(page.getByRole('button',{name:'✓ 已读',exact:true})).toBeVisible();

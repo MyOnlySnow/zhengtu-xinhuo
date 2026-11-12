@@ -7,4 +7,5 @@ export const SITE = {
   activities: [],
   works: [],
   contact: '',
+  copyrightContactUrl: 'https://github.com/MyOnlySnow/zhengtu-xinhuo/issues/new?template=copyright.yml',
 };
