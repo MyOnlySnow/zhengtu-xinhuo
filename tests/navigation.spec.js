@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-import {STORIES,CASES,SPEECHES} from '../js/catalog.js';
+import {STORIES,CASES,SPEECHES,SOURCES} from '../js/catalog.js';
 
 test('主导航只有三个入口，学习与资源栏目归入下级菜单',async({page})=>{
   await page.goto('/');await expect(page.locator('h1')).toBeVisible();
@@ -106,6 +106,56 @@ test('各栏目与详情页的路径导航、当前主栏目及返回链接一�
   await page.locator('.breadcrumb a').first().click();await expect(page.locator('h1')).toContainText('循着信仰的足迹');
   await expect(page.locator('.breadcrumb')).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('学习资料分类切换保留筛选位置、焦点并支持浏览器前进后退',async({page})=>{
+  for(const width of [1440,390]){
+    await page.setViewportSize({width,height:900});
+    await page.goto('/#/study');
+    const filters=page.getByRole('navigation',{name:'学习资料分类'});
+    await filters.scrollIntoViewIfNeeded();
+    await page.evaluate(()=>window.scrollBy({top:-70,behavior:'instant'}));
+    const topBefore=await filters.evaluate(el=>el.getBoundingClientRect().top);
+    const scrollBefore=await page.evaluate(()=>scrollY);
+    await filters.getByRole('link',{name:'精选',exact:true}).click();
+    expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+    const speeches=filters.getByRole('link',{name:'重要讲话'});
+    await speeches.click();
+    await expect(page).toHaveURL(/kind=%E9%87%8D%E8%A6%81%E8%AE%B2%E8%AF%9D$/);
+    await expect(speeches).toHaveAttribute('aria-current','true');
+    await expect(page.locator('.resource-list article')).not.toHaveCount(0);
+    expect(await page.locator('.resource-list .tag').allTextContents()).toEqual(Array(await page.locator('.resource-list article').count()).fill('重要讲话'));
+    expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+    expect(await filters.evaluate(el=>el.getBoundingClientRect().top)).toBe(topBefore);
+    await expect(speeches).toBeFocused();
+
+    await filters.getByRole('link',{name:'党史专题'}).click();
+    await expect(page).toHaveURL(/kind=%E5%85%9A%E5%8F%B2%E4%B8%93%E9%A2%98$/);
+    expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+    await page.goBack();
+    await expect(filters.getByRole('link',{name:'重要讲话'})).toHaveAttribute('aria-current','true');
+    expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+    await page.goForward();
+    await expect(filters.getByRole('link',{name:'党史专题'})).toHaveAttribute('aria-current','true');
+    expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+
+    for(const kind of ['人物史料','全部','精选']){
+      const filter=filters.getByRole('link',{name:kind,exact:true});
+      await filter.focus();await page.keyboard.press('Enter');
+      await expect(filter).toHaveAttribute('aria-current','true');
+      await expect(filter).toBeFocused();
+      expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+      if(kind==='全部')await expect(page.locator('.resource-list article')).toHaveCount(SOURCES.length);
+    }
+    await filters.getByRole('link',{name:'精选',exact:true}).click();
+    expect(await page.evaluate(()=>scrollY)).toBe(scrollBefore);
+
+    await page.locator('.study-tabs a[href$="tab=practice"]').click();
+    await expect(page.locator('#challenge-form')).toBeVisible();
+    await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(0);
+    await page.goto('/#/study?tab=learn&kind=%E4%BA%BA%E7%89%A9%E5%8F%B2%E6%96%99');
+    await expect(filters.getByRole('link',{name:'人物史料'})).toHaveAttribute('aria-current','true');
+  }
 });
 
 test('桌面下级导航支持键盘进入、Escape和点击空白关闭',async({page})=>{

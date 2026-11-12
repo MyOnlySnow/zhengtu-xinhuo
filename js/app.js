@@ -203,13 +203,18 @@ function initMap(query) {
   if(chosen&&markers.has(chosen.id))select(chosen.id);
 }
 const studyTabs = tab => `<nav class="detail-tabs study-tabs" aria-label="研学栏目">${[['learn','学 · 理论与历史'],['stories','讲 · 故事与宣讲'],['practice','做 · 科研与实践'],['quiz','悟 · 研学自测']].map(([k,n])=>link(`#/study?tab=${k}`,n,k===tab?'active':'')).join('')}</nav>`;
+const SOURCE_KINDS=['精选','重要讲话','党史专题','人物史料','全部'];
+const FEATURED_SOURCE_IDS=new Set(['speech','speech-longmarch80','speech-scientists','speech-tech2024','speech-pku2018','speech-youth2022','speech-centenary2021','history','video','wang']);
+function studySourceList(kind) {
+  const list=SOURCES.filter(s=>kind==='全部'||(kind==='精选'?FEATURED_SOURCE_IDS.has(s.id):s.type===kind));
+  return list.map((s,i)=>`<article><span class="resource-number">${String(i+1).padStart(2,'0')}</span><div class="resource-content"><span class="tag">${esc(s.type)}</span><h3>${esc(s.title)}</h3><p>${esc(s.desc)}</p><small>${esc(s.org)} · ${esc(s.date)}</small></div><div class="resource-actions">${external(s.url,'前往学习','text-link')}<button class="read-toggle ${state.read.includes(s.id)?'is-read':''}" data-read="${s.id}" aria-pressed="${state.read.includes(s.id)}">${state.read.includes(s.id)?'✓ 已读':'标记已读'}</button></div></article>`).join('');
+}
+const studySourceTabs = kind => `<nav class="filter-tabs source-type-tabs" aria-label="学习资料分类">${SOURCE_KINDS.map(t=>`<a href="#/study?tab=learn&kind=${encodeURIComponent(t)}"${t===kind?' class="active" aria-current="true"':''}>${t}</a>`).join('')}</nav>`;
 function studyPage(query) {
   const tab=query.get('tab')||'learn';let body='';
   if(tab==='learn') {
     const kind=query.get('kind')||'精选';
-    const selectIds=new Set(['speech','speech-longmarch80','speech-scientists','speech-tech2024','speech-pku2018','speech-youth2022','speech-centenary2021','history','video','wang']);
-    const list=SOURCES.filter(s=>kind==='全部'||(kind==='精选'?selectIds.has(s.id):s.type===kind));
-    body=`<div class="study-intro"><div><span class="eyebrow">读原文 · 理脉络 · 谈体会</span><h2>权威资料，按学习目标选择</h2><p>精选适合集体共读的讲话与党史入口。人物和故事的详细史料也可按类型查阅。</p></div><div class="study-progress"><strong>${SOURCES.filter(s=>state.read.includes(s.id)).length}<small> / ${SOURCES.length}</small></strong><span>本机标记已读</span></div></div><div class="filter-tabs source-type-tabs">${['精选','重要讲话','党史专题','人物史料','全部'].map(t=>link(`#/study?tab=learn&kind=${encodeURIComponent(t)}`,t,t===kind?'active':'')).join('')}</div><div class="resource-list">${list.map((s,i)=>`<article><span class="resource-number">${String(i+1).padStart(2,'0')}</span><div class="resource-content"><span class="tag">${esc(s.type)}</span><h3>${esc(s.title)}</h3><p>${esc(s.desc)}</p><small>${esc(s.org)} · ${esc(s.date)}</small></div><div class="resource-actions">${external(s.url,'前往学习','text-link')}<button class="read-toggle ${state.read.includes(s.id)?'is-read':''}" data-read="${s.id}" aria-pressed="${state.read.includes(s.id)}">${state.read.includes(s.id)?'✓ 已读':'标记已读'}</button></div></article>`).join('')}</div><div class="soft-callout"><h3>带着问题学</h3><p>长征中的独立自主、实事求是，如何体现到我们的研究设计与实验验证中？</p>${link('#/notebook','记录我的学习体会 →','text-link')}</div>`;
+    body=`<div class="study-intro"><div><span class="eyebrow">读原文 · 理脉络 · 谈体会</span><h2>权威资料，按学习目标选择</h2><p>精选适合集体共读的讲话与党史入口。人物和故事的详细史料也可按类型查阅。</p></div><div class="study-progress"><strong>${SOURCES.filter(s=>state.read.includes(s.id)).length}<small> / ${SOURCES.length}</small></strong><span>本机标记已读</span></div></div>${studySourceTabs(kind)}<div class="resource-list">${studySourceList(kind)}</div><div class="soft-callout"><h3>带着问题学</h3><p>长征中的独立自主、实事求是，如何体现到我们的研究设计与实验验证中？</p>${link('#/notebook','记录我的学习体会 →','text-link')}</div>`;
   }
   else if(tab==='stories') {
     const filtered=STORIES.filter(st=>matchesContent(st,Object.fromEntries(query)));
@@ -320,11 +325,26 @@ function exportAll() {
   const records=[`# ${SITE.name} · 我的研学档案`,`支部：${SITE.branch}`,`导出时间：${new Date().toLocaleString('zh-CN')}`,'## 学习记录',...SOURCES.filter(s=>state.read.includes(s.id)).map(s=>`- 已读：${s.title}\n  ${s.url}`),'## 研学手记',...state.notes.map(n=>`### ${n.title}\n${n.date} · ${n.topic}\n\n${n.content}`),'## 科研攻关',...state.challenges.map(c=>`### ${c.title}\n${c.date} · ${c.status}\n\n问题与瓶颈：\n${c.problem}\n\n行动与验证：\n${c.plan}`),'## 微党课创作',...Object.entries(state.drafts).filter(([,d])=>d).map(([id,d])=>`### ${STORIES.find(s=>s.id===id)?.title||id}\n${d}`)];
   download('征途薪火-我的研学档案.md',records.join('\n\n'));
 }
+let renderedRoute=null;
 function render({keepScroll=false}={}) {
-  activeMap?.remove();activeMap=null;
   const raw=location.hash.replace(/^#\/?/,'');const [path,search]=raw.split('?');const query=new URLSearchParams(search||'');const [page='',id]=path.split('/');
   if(page==='about'){location.replace('#/?section=branch');return;}
   if(page==='trail'&&query.get('mode')==='resources'){location.replace('#/resources');return;}
+  const previous=renderedRoute;renderedRoute={page,id,query,hash:location.hash};
+  const kind=query.get('kind')||'精选';
+  const sourceTabs=$('.source-type-tabs',main);
+  // 分类属于当前页面的筛选：保留筛选栏、键盘焦点与滚动位置，仅更新结果。
+  if(page==='study'&&!id&&previous?.page==='study'&&!previous.id&&
+    (query.get('tab')||'learn')==='learn'&&(previous.query.get('tab')||'learn')==='learn'&&
+    kind!==(previous.query.get('kind')||'精选')&&sourceTabs) {
+    sourceTabs.querySelectorAll('a').forEach(a=>{
+      const active=a.textContent===kind;a.classList.toggle('active',active);
+      if(active)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current');
+    });
+    sourceTabs.nextElementSibling.innerHTML=studySourceList(kind);
+    return;
+  }
+  activeMap?.remove();activeMap=null;
   const known={ '':homePage,speeches:()=>speechesPage(query),speech:()=>speechPage(id),cases:()=>casesPage(query),case:()=>casePage(id),trail:()=>trailPage(query),people:()=>peoplePage(query),person:()=>personPage(id,query),map:()=>mapPage(query),study:()=>studyPage(query),story:()=>storyPage(id),notebook:notebookPage,resources:resourcesPage,sources:sourcesPage };
   main.innerHTML=pageBreadcrumb(page,id,query)+(known[page]||notFound)();
   syncNavigation(page,query);
@@ -336,6 +356,12 @@ function render({keepScroll=false}={}) {
   if(page===''&&query.get('section')==='branch')requestAnimationFrame(()=>{$('#branch')?.scrollIntoView({block:'start'});$('#branch-title')?.focus({preventScroll:true});});
 }
 main.addEventListener('click',e=>{
+  const sourceLink=e.target.closest('.source-type-tabs a');
+  if(sourceLink&&e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){
+    e.preventDefault();
+    if(!sourceLink.classList.contains('active')){history.pushState(null,'',sourceLink.href);render();}
+    return;
+  }
   const quizTopic=e.target.closest('[data-quiz-topic]');if(quizTopic)startQuiz({topic:quizTopic.dataset.quizTopic});
   if(e.target.closest('[data-quiz-new]'))startQuiz();
   if(e.target.closest('[data-quiz-retry]')&&quizSession?.submitted){const questions=quizSession.questions.filter(q=>questionResult(q,quizSession.responses[q.id])!=='correct');if(questions.length)startQuiz({questions});}
@@ -385,7 +411,12 @@ async function boot() {
     landmarks=[...LANDMARKS,...qd.flatMap(p=>p.landmarks.map(l=>({...l,lat:l.coordinates.lat,lng:l.coordinates.lng,region:'青岛'})))].map(normalizeLandmark);
     landmarks=landmarks.filter((l,i,arr)=>arr.findIndex(x=>x.id===l.id)===i);
     people=people.map(p=>({...p,landmarks:(p.landmarks||[]).map(l=>typeof l==='string'?landmarks.find(x=>x.id===l):l).filter(Boolean)}));
-    window.addEventListener('hashchange',()=>render());render();
+    // 页面导航由 render 定位，浏览器不再另行恢复旧滚动位置。
+    history.scrollRestoration='manual';
+    const onRouteChange=()=>{if(renderedRoute?.hash!==location.hash)render();};
+    window.addEventListener('hashchange',onRouteChange);
+    window.addEventListener('popstate',onRouteChange);
+    render();
   } catch(error) { main.innerHTML=`<section class="container content-section"><h1>研学资料暂未加载</h1><p>请通过本地 HTTP 服务打开网站，并确认已完成构建。</p><p>${esc(error.message)}</p><button class="button red" onclick="location.reload()">重新加载</button></section>`; }
 }
 boot();
