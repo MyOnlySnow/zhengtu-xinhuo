@@ -61,6 +61,13 @@ function initMap(){
   replace('  if (currentEvent === id) {\n    closeDetail();\n    return;\n  }\n','');
   replace('function selectEvent(id) {','function selectEvent(id,pan=true) {');
   replace('  map.flyTo([e.latGCJ, e.lngGCJ], 9, { duration: 1.0 });','  if(pan)map.flyTo([e.latGCJ, e.lngGCJ], 7, { duration: .6 });');
+  // Only scroll the embedded timeline; scrollIntoView also moves the host page.
+  replace("    activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });", `    const timeline = document.getElementById('timeline');
+    const itemTop = activeItem.getBoundingClientRect().top - timeline.getBoundingClientRect().top + timeline.scrollTop;
+    if (itemTop < timeline.scrollTop) timeline.scrollTop = itemTop;
+    else if (itemTop + activeItem.offsetHeight > timeline.scrollTop + timeline.clientHeight) {
+      timeline.scrollTop = itemTop + activeItem.offsetHeight - timeline.clientHeight;
+    }`);
   replace("    <div class=\"timeline-item ${e.type}\" data-id=\"${e.id}\" onclick=\"selectEvent('${e.id}')\">", "    <button type=\"button\" class=\"timeline-item ${e.type}\" data-id=\"${e.id}\" onclick=\"selectEvent('${e.id}')\">");
   replace("    </div>\n  `).join('');\n}", "    </button>\n  `).join('');\n}");
   replace("    el.classList.toggle('active', el.dataset.id === id);", "    el.classList.toggle('active', el.dataset.id === id);el.setAttribute('aria-pressed',String(el.dataset.id === id));");
@@ -86,5 +93,5 @@ function initMap(){
   replace('        <span>红四方面军</span>\n      </div>','        <span>红四方面军</span>\n      </div><div class="legend-item"><div style="width:20px;height:3px;background:#72774a;flex-shrink:0"></div><span>红二十五军</span></div>');
   await writeFile(path.join(out,'index.html'),html);
   await cp(path.join(root,'vendor/long-march-map/README.md'),path.join(out,'UPSTREAM-README.md'));
-  await writeFile(path.join(out,'ADAPTATIONS.md'),`# 轻量长征路线图 · 本站适配\n\n上游：youxuels/long-march-map，固定版本 ${upstream}。原README声明MIT，未提供独立LICENSE；原始网页与README保存在vendor/long-march-map，保留原作者归属。\n\n修改日期：2026-11-12。本站复用界面、时间线和播放交互；替换原14节点、全部引语、统计与原示意路线为js/data.js的9个节点和wanli-trail四路航点。吴起为1935年中央红军到达陕北；三大主力会师为1936年10月。\n\nLeaflet由本站提供；默认使用本地DataV省界轮廓，不请求外部瓦片；可选择OpenStreetMap街道底图，保留归属。节点链接回本站故事或官方专题。\n\n源码：https://github.com/MyOnlySnow/zhengtu-xinhuo/tree/main/vendor/long-march-map\n适配：https://github.com/MyOnlySnow/zhengtu-xinhuo/blob/main/scripts/build-light-march.mjs\n\n节点依据：https://www.dswxyjy.org.cn/GB/427277/462086/index.html\n`);
+  await writeFile(path.join(out,'ADAPTATIONS.md'),`# 轻量长征路线图 · 本站适配\n\n上游：youxuels/long-march-map，固定版本 ${upstream}。原README声明MIT，未提供独立LICENSE；原始网页与README保存在vendor/long-march-map，保留原作者归属。\n\n修改日期：2026-11-13。本站复用界面、时间线和播放交互；替换原14节点、全部引语、统计与原示意路线为js/data.js的9个节点和wanli-trail四路航点。吴起为1935年中央红军到达陕北；三大主力会师为1936年10月。时间线定位仅滚动自身列表，避免内嵌时带动网站外层页面。\n\nLeaflet由本站提供；默认使用本地DataV省界轮廓，不请求外部瓦片；可选择OpenStreetMap街道底图，保留归属。节点链接回本站故事或官方专题。\n\n源码：https://github.com/MyOnlySnow/zhengtu-xinhuo/tree/main/vendor/long-march-map\n适配：https://github.com/MyOnlySnow/zhengtu-xinhuo/blob/main/scripts/build-light-march.mjs\n\n节点依据：https://www.dswxyjy.org.cn/GB/427277/462086/index.html\n`);
 }

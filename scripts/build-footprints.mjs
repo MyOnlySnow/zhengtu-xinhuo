@@ -10,6 +10,14 @@ export async function buildFootprints(root,dist) {
   let text=await readFile(journey,'utf8');
   text=text.replace("let viewMode = preference('view-mode', ['playback', 'browse'], 'playback');", "let viewMode = new URLSearchParams(location.search).get('view') === 'browse' ? 'browse' : preference('view-mode', ['playback', 'browse'], 'playback');");
   text=text.replace("let selectedPeriod = preference('period', ['all', ...periods.map(period => period.id)], 'all');", "let selectedPeriod = new URLSearchParams(location.search).get('period') === 'march' ? 'march' : preference('period', ['all', ...periods.map(period => period.id)], 'all');");
+  const scrollAnchor="    item.scrollIntoView({ block: 'nearest', behavior: 'auto' });";
+  if(!text.includes(scrollAnchor))throw Error('足迹地图列表定位接口已改变，请复核适配');
+  text=text.replace(scrollAnchor,`    const list = $('journey-list');
+    const itemTop = item.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+    if (itemTop < list.scrollTop) list.scrollTop = itemTop;
+    else if (itemTop + item.offsetHeight > list.scrollTop + list.clientHeight) {
+      list.scrollTop = itemTop + item.offsetHeight - list.clientHeight;
+    }`);
   await writeFile(journey,text);
   const app=path.join(output,'assets/js/app.js');
   text=await readFile(app,'utf8');
@@ -42,5 +50,5 @@ export async function buildFootprints(root,dist) {
     await writeFile(target,JSON.stringify(data,null,2)+'\n');
   }
   await writeFile(path.join(output,'ADAPTATIONS.md'),`# 征途·薪火集成说明\n\n上游：sansan0/mao-map，固定版本 fd624f1492282fe6cf101922b64448c325de938c，GPL-3.0。\n\n网页源码与适配脚本：https://github.com/MyOnlySnow/zhengtu-xinhuo/tree/main/vendor/mao-map
-适配脚本：https://github.com/MyOnlySnow/zhengtu-xinhuo/blob/main/scripts/build-footprints.mjs。\n\n修改日期：2026-11-12。支持 period=march 与 view=browse 深链接，默认定位到长征时期。发布数据区分1935年中央红军到达陕北与1936年三大主力会师；出发和夹金山采用官方月份口径，中英文同步。原始社区数据保存在源码目录。\n\n年表其余记录由上游社区整理，来源待核查状态仍原样显示，不能代替本站官方史料。地图为近似航点示意。\n`);
+适配脚本：https://github.com/MyOnlySnow/zhengtu-xinhuo/blob/main/scripts/build-footprints.mjs。\n\n修改日期：2026-11-13。支持 period=march 与 view=browse 深链接，默认定位到长征时期。发布数据区分1935年中央红军到达陕北与1936年三大主力会师；出发和夹金山采用官方月份口径，中英文同步。列表定位只滚动自身，避免内嵌时带动网站外层页面。原始社区数据保存在源码目录。\n\n年表其余记录由上游社区整理，来源待核查状态仍原样显示，不能代替本站官方史料。地图为近似航点示意。\n`);
 }

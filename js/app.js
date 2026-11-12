@@ -195,7 +195,8 @@ function initMap(query) {
     document.querySelectorAll('[data-place]').forEach(b=>{const selected=b.dataset.place===id;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
     const selectedButton=main.querySelector(`[data-place="${id}"]`);
     if(selectedButton) { const list=$('.map-list');const rowTop=selectedButton.getBoundingClientRect().top-list.getBoundingClientRect().top+list.scrollTop;list.scrollTop=Math.max(0,rowTop-65); }
-    const current=new URLSearchParams(params);current.set('place',id);history.replaceState(null,'',`#/map?${current}`);
+    const current=new URLSearchParams(params);current.set('place',id);history.replaceState(history.state,'',`#/map?${current}`);
+    renderedRoute={page:'map',query:current,hash:location.hash};
   }
   main.querySelectorAll('[data-place]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.place)));
   if(visible.length)map.fitBounds(L.latLngBounds(visible.map(l=>[l.lat,l.lng])),{padding:[42,42],maxZoom:['青岛','即墨'].includes(region)?12:5});
@@ -326,40 +327,73 @@ function exportAll() {
   download('征途薪火-我的研学档案.md',records.join('\n\n'));
 }
 let renderedRoute=null;
-function render({keepScroll=false}={}) {
+const IN_PAGE_LINKS='.explore-filters a,.filter-tabs a,.results-bar a,.detail-tabs[aria-label="人物详情"] a,.march-tabs a';
+function viewControls(route) {
+  if(route.page==='study')return {learn:'.source-type-tabs',stories:'.explore-filters'}[route.query.get('tab')||'learn'];
+  return {people:'.explore-filters',map:'.explore-filters',speeches:'.filter-tabs',cases:'.filter-tabs',person:'.detail-tabs',trail:'.march-tabs'}[route.page];
+}
+function syncViewControls(current,next) {
+  const controls=next.querySelectorAll('a,input,button');
+  current.querySelectorAll('a,input,button').forEach((el,i)=>{
+    const fresh=controls[i];
+    for(const name of ['href','class','aria-current']) {
+      if(fresh.hasAttribute(name))el.setAttribute(name,fresh.getAttribute(name));else el.removeAttribute(name);
+    }
+    if(el.tagName==='INPUT'&&el.value!==fresh.value)el.value=fresh.value;
+  });
+}
+function updateCurrentView(nextMarkup,selector) {
+  const current=main.querySelector(selector);
+  const template=document.createElement('template');template.innerHTML=nextMarkup;
+  const next=template.content.querySelector(selector);
+  if(!current||!next)return false;
+  const viewportTop=current.getBoundingClientRect().top;
+  const scrollLeft=window.scrollX;
+  const clearFocused=document.activeElement?.matches('.results-bar a');
+  if(activeMap){activeMap.remove();activeMap=null;}
+  syncViewControls(current,next);
+  // 筛选栏保留在 DOM 中，仅替换后方结果；保留输入焦点和横向滚动。
+  while(current.nextSibling)current.nextSibling.remove();
+  while(next.nextSibling)current.parentNode.append(next.nextSibling);
+  const breadcrumb=main.querySelector('.breadcrumb');
+  const nextBreadcrumb=template.content.querySelector('.breadcrumb');
+  if(breadcrumb&&nextBreadcrumb)breadcrumb.replaceWith(nextBreadcrumb);
+  const experienceWindow=main.querySelector('.trail-heading a');
+  if(experienceWindow)experienceWindow.href=main.querySelector('.trail-frame').src;
+  if(clearFocused)main.querySelector('.results-bar a')?.focus({preventScroll:true});
+  window.scrollTo({top:window.scrollY+current.getBoundingClientRect().top-viewportTop,left:scrollLeft,behavior:'instant'});
+  return true;
+}
+function navigateWithinPage(hash) {
+  if(location.hash===hash)return;
+  history.replaceState({...history.state,inPage:true},'');
+  history.pushState({inPage:true},'',hash);render({inPage:true});
+}
+function render({keepScroll=false,inPage=false}={}) {
   const raw=location.hash.replace(/^#\/?/,'');const [path,search]=raw.split('?');const query=new URLSearchParams(search||'');const [page='',id]=path.split('/');
   if(page==='about'){location.replace('#/?section=branch');return;}
   if(page==='trail'&&query.get('mode')==='resources'){location.replace('#/resources');return;}
   const previous=renderedRoute;renderedRoute={page,id,query,hash:location.hash};
-  const kind=query.get('kind')||'精选';
-  const sourceTabs=$('.source-type-tabs',main);
-  // 分类属于当前页面的筛选：保留筛选栏、键盘焦点与滚动位置，仅更新结果。
-  if(page==='study'&&!id&&previous?.page==='study'&&!previous.id&&
-    (query.get('tab')||'learn')==='learn'&&(previous.query.get('tab')||'learn')==='learn'&&
-    kind!==(previous.query.get('kind')||'精选')&&sourceTabs) {
-    sourceTabs.querySelectorAll('a').forEach(a=>{
-      const active=a.textContent===kind;a.classList.toggle('active',active);
-      if(active)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current');
-    });
-    sourceTabs.nextElementSibling.innerHTML=studySourceList(kind);
-    return;
-  }
-  activeMap?.remove();activeMap=null;
+  const controls=viewControls(renderedRoute);
+  const sameView=controls&&previous?.page===page&&previous.id===id&&
+    (page!=='study'||(previous.query.get('tab')||'learn')===(query.get('tab')||'learn'));
   const known={ '':homePage,speeches:()=>speechesPage(query),speech:()=>speechPage(id),cases:()=>casesPage(query),case:()=>casePage(id),trail:()=>trailPage(query),people:()=>peoplePage(query),person:()=>personPage(id,query),map:()=>mapPage(query),study:()=>studyPage(query),story:()=>storyPage(id),notebook:notebookPage,resources:resourcesPage,sources:sourcesPage };
-  main.innerHTML=pageBreadcrumb(page,id,query)+(known[page]||notFound)();
+  const markup=pageBreadcrumb(page,id,query)+(known[page]||notFound)();
+  const updated=inPage&&sameView&&previous.hash!==location.hash&&updateCurrentView(markup,controls);
+  if(!updated){activeMap?.remove();activeMap=null;main.innerHTML=markup;}
   syncNavigation(page,query);
   document.title=`${({'':'首页',speeches:'重要讲话',speech:SPEECHES.find(s=>s.id===id)?.title,cases:'典型案例',case:CASES.find(c=>c.id===id)?.title,trail:'长征沙盘',people:'红色人物',person:people.find(p=>p.id===id)?.name,map:'研学地标',study:'学思践悟',story:STORIES.find(s=>s.id===id)?.title,notebook:'我的研学',resources:'拓展资源',sources:'内容来源'})[page]||'页面未找到'}｜${SITE.name}`;
   document.body.classList.toggle('trail-page',page==='trail');
   document.body.dataset.page=page||'home';
   if(page==='map')initMap(query);
-  if(!keepScroll) { window.scrollTo({top:0,left:0,behavior:'instant'}); main.focus({preventScroll:true}); }
+  if(!keepScroll&&!updated) { window.scrollTo({top:0,left:0,behavior:'instant'}); main.focus({preventScroll:true}); }
   if(page===''&&query.get('section')==='branch')requestAnimationFrame(()=>{$('#branch')?.scrollIntoView({block:'start'});$('#branch-title')?.focus({preventScroll:true});});
 }
 main.addEventListener('click',e=>{
-  const sourceLink=e.target.closest('.source-type-tabs a');
-  if(sourceLink&&e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){
+  const filterLink=e.target.closest(IN_PAGE_LINKS);
+  if(filterLink&&e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){
     e.preventDefault();
-    if(!sourceLink.classList.contains('active')){history.pushState(null,'',sourceLink.href);render();}
+    if(!filterLink.matches('.active,.selected,[aria-current]'))navigateWithinPage(filterLink.getAttribute('href'));
     return;
   }
   const quizTopic=e.target.closest('[data-quiz-topic]');if(quizTopic)startQuiz({topic:quizTopic.dataset.quizTopic});
@@ -391,9 +425,7 @@ main.addEventListener('change',e=>{
 });
 main.addEventListener('submit',e=>{
   e.preventDefault();const form=e.target;const data=new FormData(form);
-  if(form.dataset.explore){const params=new URLSearchParams();for(const [k,v] of data)if(String(v).trim())params.set(k,String(v).trim());location.hash=`/${form.dataset.explore}?${params}`;return;}
-  if(form.id==='people-search')location.hash=`/people?q=${encodeURIComponent(data.get('q').trim())}`;
-  if(form.id==='map-search')location.hash=`/map?region=${encodeURIComponent(data.get('region'))}&q=${encodeURIComponent(data.get('q').trim())}`;
+  if(form.dataset.explore){const params=new URLSearchParams();for(const [k,v] of data)if(String(v).trim())params.set(k,String(v).trim());navigateWithinPage(`#/${form.dataset.explore}?${params}`);return;}
   const recordMeta=()=>({id:globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`,date:new Date().toLocaleDateString('zh-CN')});
   if(form.id==='note-form') { if(!data.get('title').trim()||!data.get('content').trim()){toast('请填写标题和学习体会');return;}state.notes.unshift({...recordMeta(),title:data.get('title').trim(),content:data.get('content').trim(),topic:data.get('topic')});const ok=save();render({keepScroll:true});toast(ok?'手记已保存在本机':'手记保留在当前会话，请导出备份');}
   if(form.id==='challenge-form'){if(['title','problem','plan'].some(k=>!data.get(k).trim())){toast('请完整填写题目、瓶颈与行动计划');return;}state.challenges.unshift({...recordMeta(),title:data.get('title').trim(),problem:data.get('problem').trim(),plan:data.get('plan').trim(),status:data.get('status')});const ok=save();render({keepScroll:true});toast(ok?'攻关计划已保存在本机':'计划保留在当前会话，请导出备份');}
@@ -413,7 +445,7 @@ async function boot() {
     people=people.map(p=>({...p,landmarks:(p.landmarks||[]).map(l=>typeof l==='string'?landmarks.find(x=>x.id===l):l).filter(Boolean)}));
     // 页面导航由 render 定位，浏览器不再另行恢复旧滚动位置。
     history.scrollRestoration='manual';
-    const onRouteChange=()=>{if(renderedRoute?.hash!==location.hash)render();};
+    const onRouteChange=e=>{if(renderedRoute?.hash!==location.hash)render({inPage:e.type==='popstate'&&e.state?.inPage});};
     window.addEventListener('hashchange',onRouteChange);
     window.addEventListener('popstate',onRouteChange);
     render();
