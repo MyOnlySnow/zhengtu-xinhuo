@@ -1,0 +1,51 @@
+// 权威发布页面中的人物资料图片。仅压缩格式，不生成或重绘历史人物。
+export const PORTRAITS = {
+  jiaoyulu: {
+    photo:'assets/images/national/jiaoyulu.webp',
+    alt:'焦裕禄历史照片，来源共产党员网人物资料',
+    sourceUrl:'https://www.12371.cn/2022/08/15/ARTI1660561367742574.shtml',
+    originalUrl:'https://p5.img.cctvpic.com/photoworkspace/contentimg/2022/08/15/2022081519092512120.jpg',
+    credit:'共产党员网刊载的焦裕禄资料照片；原作者及权利归原权利人。',
+    objectPosition:'center 20%',
+  },
+  leifeng: {
+    photo:'assets/images/national/leifeng.webp',
+    alt:'1960年刚入伍时的雷锋，来源共产党员网专题',
+    sourceUrl:'https://www.12371.cn/special/leifeng2013/',
+    originalUrl:'https://p2.img.cctvpic.com/photoAlbum/page/performance/img/2013/3/4/1362372666095_935.jpg',
+    credit:'共产党员网《雷锋精神与时代同行》专题资料照片；原作者及权利归原权利人。',
+    objectPosition:'center 20%',
+  },
+  yangjingyu: {
+    photo:'assets/images/national/yangjingyu.webp',
+    alt:'1926年的杨靖宇（马尚德）历史照片，来源央视新闻、共产党员网',
+    sourceUrl:'https://www.12371.cn/2021/05/07/VIDE1620343441680917.shtml',
+    originalUrl:'https://p2.img.cctvpic.com/photoworkspace/contentimg/2021/05/07/2021050707114159357.jpg',
+    credit:'央视新闻／共产党员网刊载的1926年杨靖宇资料照片；原作者及权利归原权利人。',
+    objectPosition:'center 12%',
+  },
+  zhaoyiman: {
+    photo:'assets/images/national/zhaoyiman.webp',
+    alt:'赵一曼人物照片，来源人民日报2025年6月26日报道',
+    sourceUrl:'https://paper.people.com.cn/rmrb/pc/content/202506/26/content_30082392.html',
+    originalUrl:'https://paper.people.com.cn/rmrb/pc/pic/202506/26/fc07a145-39cd-4139-8bb3-cb6be834c9fb.jpg',
+    credit:'人民日报《赵一曼：舍家卫国的巾帼英雄》配图；原作者及权利归原权利人。',
+    objectPosition:'center 20%',
+  },
+  zhangguimei: {
+    photo:'assets/images/national/zhangguimei.webp',
+    alt:'张桂梅在课堂上的照片，来源共产党员网人物事迹资料',
+    sourceUrl:'https://www.12371.cn/2020/12/16/ARTI1608087563818847.shtml',
+    originalUrl:'https://p5.img.cctvpic.com/photoworkspace/contentimg/2020/12/04/2020120407464224839.jpg',
+    credit:'人民日报／共产党员网人物事迹资料配图；原作者及权利归原权利人。',
+    objectPosition:'center 20%',
+  },
+  huangwenxiu: {
+    photo:'assets/images/national/huangwenxiu.webp',
+    alt:'黄文秀生前工作照，新华社发',
+    sourceUrl:'https://www.xinhuanet.com/photo/2021-07/24/c_1127690933.htm',
+    originalUrl:'https://www.xinhuanet.com/photo/2021-07/24/1127690933_16271186819601n.jpg',
+    credit:'新华社发，黄文秀生前工作照；保留图片原有新华网水印，权利归原权利人。',
+    objectPosition:'60% center',
+  },
+};

@@ -38,4 +38,19 @@
 
 ## 学习资料
 
-门户所用官方资料及链接集中维护于 `js/data.js` 的 SOURCES，并在网站“内容来源”中展示。网站以概述、学习问题和创作提纲组织内容，不镜像官方讲话全文。
+门户所用官方资料及链接由 `js/catalog.js` 汇总各专题模块的来源，并在网站“内容来源”中展示。网站以有章节的原创整理稿、学习问题和创作提纲组织内容，完整已发表文章通过官方外链阅读。
+
+新增资料的逐项核对记录：
+
+- `docs/march-classics-research.md`、`docs/march-research.md`：详细长征故事、红军人物和长征地标。
+- `docs/history-research.md`、`docs/qingdao-review.md`：全国人物与青岛、即墨人物史料。
+- `docs/science-research.md`：科研人物、重大工程案例与研学场馆。
+- `docs/portrait-credits.md`、`docs/science-photo-credits.md`：人物照片的原始发布页面与归属。
+
+人物照片的权利归原权利人，本站未将其作为开放许可图片再授权。新增图均为原始资料页面发布的真实人物照片；彝海图片是明确标注的当代实景，不是1935年现场照片。每张图在人物详情或来源页提供发布出处。
+
+## 可视化与数字研学项目研究
+
+- [apache/echarts](https://github.com/apache/echarts)：Apache-2.0，研究时间轴与交互数据叙事，本次未引入新运行依赖。
+- [Leaflet/Leaflet](https://github.com/Leaflet/Leaflet)：BSD-2-Clause，本网站已使用的地图组件。
+- [Leizhidong-creator/Red-Army-Street](https://github.com/Leizhidong-creator/Red-Army-Street)：哈达铺红军街数字研学项目，用于比较地点叙事和场景导览，未复制其代码。GitHub 未识别出该仓库的开放许可证。

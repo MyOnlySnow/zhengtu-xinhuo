@@ -49,7 +49,7 @@ test('故事草稿自动保存，提纲导出含创作与官方来源',async({pa
   await page.goto('/#/story/blanket');await page.getByLabel('补充我的讲述与实践联系').fill('让专业能力服务同学的实际需要。');await page.reload();
   await expect(page.getByLabel('补充我的讲述与实践联系')).toHaveValue('让专业能力服务同学的实际需要。');
   const pending=page.waitForEvent('download');await page.getByRole('button',{name:'导出宣讲提纲'}).click();const file=await pending;
-  const text=await readFile(await file.path(),'utf8');expect(text).toContain('让专业能力服务同学的实际需要。');expect(text).toContain('https://www.forestry.gov.cn/');
+  const text=await readFile(await file.path(),'utf8');expect(text).toContain('让专业能力服务同学的实际需要。');expect(text).toContain('https://www.12371.cn/');expect(text).toContain('https://www.xinhuanet.com/');
 });
 
 test('科研攻关计划保存、阶段更新与刷新恢复',async({page})=>{
@@ -88,7 +88,7 @@ test('长征沙盘开场与两种模式可用，时间轴可操作',async({page}
 test('手机导航、人物、地图、故事与表单均无横向溢出',async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.goto('/');
   await expect(page.locator('h1')).toBeVisible();await page.screenshot({path:'docs/screenshots/home-mobile.png',fullPage:true});
-  await page.getByRole('button',{name:'展开导航'}).click();await page.locator('#main-nav').getByRole('link',{name:'红色人物',exact:true}).click();
+  await page.getByRole('button',{name:'展开导航'}).click();await page.locator('#main-nav').getByRole('link',{name:'人物故事',exact:true}).click();
   await expect(page.locator('h1')).toHaveText('与榜样同行');
   for(const path of ['#/people','#/person/dengenming','#/map?place=luding','#/story/blanket','#/study?tab=practice','#/notebook','#/about']){
     await page.goto('/'+path);await expect(page.locator('h1')).toBeVisible();
