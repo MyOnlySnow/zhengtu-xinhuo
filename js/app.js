@@ -3,6 +3,7 @@ import { REPOSITORIES, MARCH_RESOURCES } from './repositories.js';
 import { SOURCES, EVENTS, STORIES as STORY_DATA, PEOPLE, LANDMARKS, CASES, SPEECHES, QUIZ, TOPICS, LEARNING_PATHS, normalizePerson, normalizeStory, normalizeLandmark } from './catalog.js';
 import { REGION_SHORTCUTS, matchesContent, storySections, storyLength } from './explore.js';
 import { caseLength } from './case-details.js';
+import { QUIZ_TOPICS, QUIZ_TYPES, drawQuiz, questionResult, gradeQuiz } from './quiz.js';
 const STORIES=STORY_DATA.map(normalizeStory);
 
 const main = document.querySelector('main');
@@ -184,9 +185,48 @@ function studyPage(query) {
     body=`<div class="study-intro"><div><span class="eyebrow">有背景 · 有过程 · 有出处</span><h2>从一个故事，走进一段完整历史</h2><p>长征故事分章节展开；人物故事与科学报国案例按地区、主题关联。每篇提供原发布页全文入口与宣讲提纲。</p></div></div>${filterPanel({path:'study',query,items:STORIES,label:'故事',hidden:{tab:'stories'}})}<div class="results-bar"><p><strong>${filtered.length}</strong> 篇可读故事 <span>/ 共 ${STORIES.length} 篇</span></p>${link('#/study?tab=stories','清除筛选','text-link')}</div><div class="stories-grid expanded-stories">${filtered.map(contentCard).join('')}</div>${filtered.length?'':'<div class="empty-state">没有匹配的故事。试试其他主题或地区。</div>'}`;
   }
   else if(tab==='practice')body=practicePanel();
-  else if(tab==='quiz')body=`<div class="study-intro"><div><span class="eyebrow">四个问题 · 检验理解</span><h2>回望来时路，想想脚下路</h2><p>自测仅用于个人研学，不计入支部活动或考核成绩。</p></div></div><form id="quiz-form" class="quiz-form">${QUIZ.map((q,i)=>`<fieldset><legend><span>0${i+1}</span>${q.q}</legend>${q.options.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}" required> ${o}</label>`).join('')}<div class="quiz-feedback" id="feedback-${i}"></div></fieldset>`).join('')}<button class="button red">查看研学反馈 →</button><div id="quiz-result" role="status"></div></form>`;
+  else if(tab==='quiz')body=quizPanel();
   else return notFound();
   return `${pageHead('学一段历史 · 讲一个故事 · 攻一个难题','在学思践悟中，接续精神的火种','将理论学习、主题宣讲与实践转化贯通起来，让学习留下思考，让行动留下足迹。')}<section class="container content-section">${studyTabs(tab)}${tab==='learn'?learningOverview():''}${body}</section>`;
+}
+let quizSession=null;
+function createQuizSession(topic='全部',count=10,questions=null) {
+  return {topic,count,questions:questions||drawQuiz({topic,count}),responses:{},submitted:false,review:!!questions};
+}
+function quizAnswer(q) {
+  return q.answers.map(i=>`${String.fromCharCode(65+i)}. ${q.options[i]}`).join('；');
+}
+function quizQuestion(q,i) {
+  const selected=quizSession.responses[q.id]||[];
+  const status=quizSession.submitted?questionResult(q,selected):'';
+  return `<fieldset data-question="${q.id}" class="${status?`quiz-${status}`:''}"><legend><span>${String(i+1).padStart(2,'0')}</span>${esc(q.q)}</legend><div class="quiz-question-meta"><span class="tag">${esc(q.topic)}</span><span>${QUIZ_TYPES[q.type]}${q.type==='multiple'?' · 全部选对才得分':''}</span></div>${q.options.map((o,j)=>`<label class="${status&&q.answers.includes(j)?'is-answer':''} ${status&&selected.includes(j)&&!q.answers.includes(j)?'is-mistake':''}"><input type="${q.type==='multiple'?'checkbox':'radio'}" name="quiz-${q.id}" value="${j}" ${selected.includes(j)?'checked':''}><span class="quiz-option-letter">${String.fromCharCode(65+j)}.</span><span>${esc(o)}</span></label>`).join('')}<div class="quiz-feedback" id="quiz-feedback-${q.id}">${status?`<strong>${status==='correct'?'✓ 理解正确':status==='unanswered'?'○ 尚未作答':'再想一想'}</strong><p class="quiz-answer">正确答案：${esc(quizAnswer(q))}</p><p>${esc(q.explain)}</p><div class="quiz-reading">${link(q.reading.href,esc(q.reading.label)+' →','text-link')}${q.sourceIds.map(id=>external(source(id).url,esc(source(id).title),'quiz-evidence')).join('')}</div>`:''}</div></fieldset>`;
+}
+function quizSummary() {
+  if(!quizSession.submitted)return '';
+  const {questions,responses}=quizSession;
+  const score=gradeQuiz(questions,responses);
+  const retry=score.wrong+score.unanswered;
+  return `<h3>本次答对 ${score.correct} / ${questions.length} 题</h3><p>答对 ${score.correct} 题 · 答错 ${score.wrong} 题 · 未答 ${score.unanswered} 题。${retry?'可回看逐题解析，或单独重练需要巩固的题目。':'本轮全部答对，可以换一组继续巩固。'}</p><div class="quiz-breakdown">${QUIZ_TOPICS.filter(topic=>questions.some(q=>q.topic===topic)).map(topic=>{const group=questions.filter(q=>q.topic===topic);const result=gradeQuiz(group,responses);return `<span>${topic}<b>${result.correct} / ${group.length}</b></span>`;}).join('')}</div><div class="quiz-result-actions">${retry?`<button type="button" class="button red" data-quiz-retry>重练错题与未答题（${retry}）</button>`:''}<button type="button" class="button outline" data-quiz-new>换一组题</button>${link('#/notebook','写下我的研学体会 →','text-link')}</div>`;
+}
+function quizPanel() {
+  if(!quizSession)quizSession=createQuizSession();
+  const {questions,topic,count,review}=quizSession;
+  const answered=questions.filter(q=>quizSession.responses[q.id]?.length).length;
+  return `<section class="quiz-workspace" aria-label="研学自测"><div class="study-intro"><div><span class="eyebrow">${QUIZ.length} 道题 · 五个主题 · 三种题型</span><h2>回望来时路，想想脚下路</h2><p>从历史记忆到科研实践，测一测，也回到资料中找依据。自测仅用于个人研学。</p></div></div><div class="quiz-controls"><div class="quiz-topics" role="group" aria-label="选择自测主题">${['全部',...QUIZ_TOPICS].map(t=>`<button type="button" data-quiz-topic="${t}" aria-pressed="${topic===t}" class="${topic===t?'active':''}">${t==='全部'?'综合练习':t}<small>${QUIZ.filter(q=>t==='全部'||q.topic===t).length} 题</small></button>`).join('')}</div><div class="quiz-round-controls"><label for="quiz-count">每轮题量 <select id="quiz-count">${[[10,'10 题'],[20,'20 题'],['all','本主题全部']].map(([value,label])=>`<option value="${value}" ${String(count)===String(value)?'selected':''}>${label}</option>`).join('')}</select></label><button type="button" class="button outline small" data-quiz-new>换一组题</button><p>切换主题或题量将开始新一轮；不足所选题量时展示全部题目。</p></div></div><div class="quiz-round-heading"><div><h3>${review?'错题与未答题重练':topic==='全部'?'综合随机练习':topic+'专项练习'}</h3><p>${review?'重新作答后再核对理解。':topic==='全部'?'按主题均衡抽题，每轮覆盖不同知识。':'从本主题题库中抽取，适合结合专题深入巩固。'}</p></div><span>${questions.length} 题</span></div><div class="quiz-progress"><div><span id="quiz-progress-label" role="status">已作答 ${answered} / ${questions.length} 题</span><small>单选与判断选一项；多选须全部选对。</small></div><progress id="quiz-progress" value="${answered}" max="${questions.length}" aria-labelledby="quiz-progress-label"></progress></div><form id="quiz-form" class="quiz-form">${questions.map(quizQuestion).join('')}<div class="quiz-submit"><button class="button red">查看研学反馈 →</button><p>可以先提交已答题；未答题单独统计。</p></div><div id="quiz-result" role="status" tabindex="-1">${quizSummary()}</div></form></section>`;
+}
+function startQuiz({topic=quizSession?.topic||'全部',count=quizSession?.count||10,questions=null}={}) {
+  quizSession=createQuizSession(topic,count,questions);
+  render({keepScroll:true});
+  $('.quiz-workspace')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function updateQuizResponses(form) {
+  const data=new FormData(form);
+  quizSession.responses=Object.fromEntries(quizSession.questions.map(q=>[q.id,data.getAll(`quiz-${q.id}`).map(Number)]));
+}
+function updateQuizProgress() {
+  const answered=quizSession.questions.filter(q=>quizSession.responses[q.id]?.length).length;
+  $('#quiz-progress').value=answered;
+  $('#quiz-progress-label').textContent=`已作答 ${answered} / ${quizSession.questions.length} 题`;
 }
 function practicePanel() {
   return `<div class="study-intro"><div><span class="eyebrow">把论文写在祖国大地上</span><h2>为一个真问题，走一段自己的长征</h2><p>选择一个具体瓶颈，写下可验证的目标与下一步行动。这里的记录保存在当前浏览器中。</p></div></div><div class="practice-case-callout"><div><span class="eyebrow">先看别人怎样攻关</span><h3>从真实工程中学习解决问题的方法</h3><p>案例中的难题、验证过程和协作方式，可帮助我们形成自己的研究计划。</p></div>${link('#/cases','浏览典型案例 →','button outline')}</div><div class="practice-layout"><aside class="practice-guidance"><h3>一份攻关计划的四个支点</h3><ol><li><strong>真问题</strong><p>明确国家、行业或师生实际需要。</p></li><li><strong>硬骨头</strong><p>描述技术瓶颈、已知限制与失败原因。</p></li><li><strong>实证据</strong><p>设计可复核的实验，完整保留原始数据。</p></li><li><strong>共前行</strong><p>明确下一步分工、验证方法与阶段目标。</p></li></ol></aside><form id="challenge-form" class="editor-form"><label>攻关题目<input name="title" required maxlength="100" placeholder="例如：降低某模型在边缘设备上的推理延迟"></label><label>真实需求与当前瓶颈<textarea name="problem" required rows="4" maxlength="4000" placeholder="问题服务于谁？已有方案卡在什么地方？"></textarea></label><label>下一步行动与验证方式<textarea name="plan" required rows="4" maxlength="4000" placeholder="写下可执行的实验、评价指标与协作安排。"></textarea></label><label>当前阶段<select name="status"><option>问题梳理</option><option>方案验证</option><option>持续攻关</option><option>阶段完成</option></select></label><p class="form-note">请只填写适合保存在本机的内容。实际支部成果由支部核实后展示。</p><button class="button red">保存我的攻关计划 →</button></form></div><div class="section-heading small-heading"><h2>我的攻关记录</h2><button class="text-button" data-export="all">导出研学档案 ↓</button></div><div class="challenge-list">${state.challenges.length?state.challenges.map(challengeCard).join(''):'<div class="empty-state">还没有攻关记录。从一个明确的问题开始。</div>'}</div>`;
@@ -261,6 +301,9 @@ function render({keepScroll=false}={}) {
   if(!keepScroll) { window.scrollTo(0,0); main.focus({preventScroll:true}); }
 }
 main.addEventListener('click',e=>{
+  const quizTopic=e.target.closest('[data-quiz-topic]');if(quizTopic)startQuiz({topic:quizTopic.dataset.quizTopic});
+  if(e.target.closest('[data-quiz-new]'))startQuiz();
+  if(e.target.closest('[data-quiz-retry]')&&quizSession?.submitted){const questions=quizSession.questions.filter(q=>questionResult(q,quizSession.responses[q.id])!=='correct');if(questions.length)startQuiz({questions});}
   const section=e.target.closest('[data-section]');if(section)document.getElementById(section.dataset.section)?.scrollIntoView({behavior:'smooth',block:'start'});
   const caseExport=e.target.closest('[data-case-export]');if(caseExport)exportCase(caseExport.dataset.caseExport);
   const storyExport=e.target.closest('[data-story-export]');if(storyExport){const s=STORIES.find(x=>x.id===storyExport.dataset.storyExport);download(`${s.title}-完整研学稿.md`,[`# ${s.title}`,s.period,s.intro,...storySections(s).flatMap(sec=>[`## ${sec.title}`,...sec.paragraphs]),'## 讨论问题',...s.questions,'## 史料与完整原文',...s.sourceIds.map(id=>source(id)).map(x=>`${x.title}\n${x.org}\n${x.url}`)].join('\n\n'));}
@@ -271,7 +314,20 @@ main.addEventListener('click',e=>{
 });
 let lastDeleted=null;
 main.addEventListener('input',e=>{if(e.target.matches('[data-draft]')){state.drafts[e.target.dataset.draft]=e.target.value;const ok=save();$('#draft-status').textContent=ok?'草稿已保存在本机':'草稿未能保存，请导出备份';}});
-main.addEventListener('change',e=>{if(e.target.matches('[data-status]')){const c=state.challenges.find(c=>c.id===e.target.dataset.status);if(c){c.status=e.target.value;save();render({keepScroll:true});toast('阶段已更新');}}});
+main.addEventListener('change',e=>{
+  if(e.target.id==='quiz-count'){startQuiz({count:e.target.value});return;}
+  if(e.target.closest('#quiz-form')&&e.target.matches('input')){
+    updateQuizResponses(e.target.form);
+    if(quizSession.submitted){
+      quizSession.submitted=false;$('#quiz-result').replaceChildren();
+      document.querySelectorAll('.quiz-feedback').forEach(el=>el.replaceChildren());
+      document.querySelectorAll('.quiz-form .is-answer,.quiz-form .is-mistake').forEach(el=>el.classList.remove('is-answer','is-mistake'));
+      document.querySelectorAll('.quiz-form fieldset').forEach(el=>el.classList.remove('quiz-correct','quiz-wrong','quiz-unanswered'));
+    }
+    updateQuizProgress();
+  }
+  if(e.target.matches('[data-status]')){const c=state.challenges.find(c=>c.id===e.target.dataset.status);if(c){c.status=e.target.value;save();render({keepScroll:true});toast('阶段已更新');}}
+});
 main.addEventListener('submit',e=>{
   e.preventDefault();const form=e.target;const data=new FormData(form);
   if(form.dataset.explore){const params=new URLSearchParams();for(const [k,v] of data)if(String(v).trim())params.set(k,String(v).trim());location.hash=`/${form.dataset.explore}?${params}`;return;}
@@ -280,7 +336,10 @@ main.addEventListener('submit',e=>{
   const recordMeta=()=>({id:globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`,date:new Date().toLocaleDateString('zh-CN')});
   if(form.id==='note-form') { if(!data.get('title').trim()||!data.get('content').trim()){toast('请填写标题和学习体会');return;}state.notes.unshift({...recordMeta(),title:data.get('title').trim(),content:data.get('content').trim(),topic:data.get('topic')});const ok=save();render({keepScroll:true});toast(ok?'手记已保存在本机':'手记保留在当前会话，请导出备份');}
   if(form.id==='challenge-form'){if(['title','problem','plan'].some(k=>!data.get(k).trim())){toast('请完整填写题目、瓶颈与行动计划');return;}state.challenges.unshift({...recordMeta(),title:data.get('title').trim(),problem:data.get('problem').trim(),plan:data.get('plan').trim(),status:data.get('status')});const ok=save();render({keepScroll:true});toast(ok?'攻关计划已保存在本机':'计划保留在当前会话，请导出备份');}
-  if(form.id==='quiz-form'){let correct=0;QUIZ.forEach((q,i)=>{const ok=Number(data.get(`q${i}`))===q.answer;if(ok)correct++;$(`#feedback-${i}`).innerHTML=`<strong>${ok?'✓ 理解正确':'再想一想'}</strong><p>${q.explain}</p>`;});$('#quiz-result').innerHTML=`<h3>本次答对 ${correct} / ${QUIZ.length} 题</h3><p>把新的理解写进手记，让知识与行动相连。</p>${link('#/notebook','写一篇研学手记 →','text-link')}`;}
+  if(form.id==='quiz-form'){
+    updateQuizResponses(form);quizSession.submitted=true;render({keepScroll:true});
+    $('#quiz-result').focus({preventScroll:true});$('#quiz-result').scrollIntoView({behavior:'smooth',block:'center'});
+  }
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#main-nav').classList.contains('open')){$('#main-nav').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').focus();}});
 $('.menu-toggle').addEventListener('click',()=>{const open=$('#main-nav').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(open));});

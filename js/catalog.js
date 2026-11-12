@@ -1,4 +1,5 @@
-import { SOURCES as BASE_SOURCES, STORIES as BASE_STORIES, EXTRA_PEOPLE, MARCH_LANDMARKS, EVENTS, QUIZ } from './data.js';
+import { SOURCES as BASE_SOURCES, STORIES as BASE_STORIES, EXTRA_PEOPLE, MARCH_LANDMARKS, EVENTS } from './data.js';
+import { QUIZ } from './quiz.js';
 import { SPEECHES, SPEECH_SOURCES } from './speeches.js';
 import { HISTORY_PEOPLE, HISTORY_STORIES, HISTORY_SOURCES, HISTORY_LANDMARKS } from './history-expansion.js';
 import { SCIENCE_PEOPLE, SCIENCE_STORIES, SCIENCE_CASES, SCIENCE_SOURCES, SCIENCE_LANDMARKS } from './science-expansion.js';

@@ -337,6 +337,57 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
 .quiz-form label { font-size: 14px; border-radius: 4px; }
 .quiz-form label:has(input:checked) { border-color: #b68865; background: #f1e6d8; }
 .quiz-feedback:not(:empty) { border-radius: 5px; font-size: 14px; }
+.quiz-workspace { max-width: 1000px; scroll-margin-top: 100px; }
+.quiz-controls { background: #eee9df; border: 1px solid #ded3c2; padding: 22px; border-radius: 8px; }
+.quiz-topics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.quiz-topics button { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; border: 1px solid #d5c8b4; border-radius: 5px; background: #fffaf1; padding: 14px; min-height: 52px; font-size: 14px; }
+.quiz-topics button small { font-size: 11px; opacity: .8; white-space: nowrap; }
+.quiz-topics button.active { background: var(--red); color: #fffaf1; border-color: var(--red); }
+.quiz-round-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 22px; margin-top: 20px; }
+.quiz-round-controls label { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.quiz-round-controls select { max-width: 180px; background: #fffaf1; border: 1px solid #d5c8b4; border-radius: 5px; min-height: 42px; padding: 8px 12px; color: #5c4e3d; }
+.quiz-round-controls > p { font-size: 12px; color: #796a53; line-height: 1.9; }
+.quiz-round-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-top: 34px; }
+.quiz-round-heading h3 { font-size: 24px; }
+.quiz-round-heading p { font-size: 13px; color: #796a53; margin-top: 8px; }
+.quiz-round-heading > span { white-space: nowrap; color: var(--red); font-size: 14px; }
+.quiz-progress { margin: 24px 0 32px; }
+.quiz-progress > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 12px; font-size: 13px; }
+.quiz-progress small { color: #796a53; font-size: 12px; }
+.quiz-progress progress { display: block; appearance: none; width: 100%; height: 6px; border: 0; border-radius: 4px; background: #e7dece; accent-color: var(--red); overflow: hidden; }
+.quiz-progress progress::-webkit-progress-bar { background: #e7dece; }
+.quiz-progress progress::-webkit-progress-value { background: var(--red); border-radius: 4px; }
+.quiz-progress progress::-moz-progress-bar { background: var(--red); }
+.quiz-workspace .quiz-form { max-width: none; }
+.quiz-form fieldset { min-width: 0; }
+.quiz-form legend { max-width: 100%; line-height: 1.9; }
+.quiz-question-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #7d6b50; margin-block: 10px 18px; }
+.quiz-form label { display: flex; align-items: baseline; gap: 10px; line-height: 1.9; }
+.quiz-form input { flex-shrink: 0; margin: 0; }
+.quiz-option-letter { flex-shrink: 0; font-weight: 600; color: #8b7657; }
+.quiz-form label.is-answer { border-color: #829079; background: #edf1e7; }
+.quiz-form label.is-mistake { border-color: #ad7470; background: #f8e9e3; }
+.quiz-feedback .quiz-answer { color: #526344; font-weight: 600; }
+.quiz-feedback p { line-height: 1.95; }
+.quiz-reading { display: grid; gap: 8px; margin-top: 16px; border-top: 1px solid #d8cbb6; padding-top: 14px; }
+.quiz-reading .text-link { font-size: 13px; }
+.quiz-evidence { font-size: 12px; color: #7d6547; overflow-wrap: anywhere; }
+.quiz-submit { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 22px; }
+.quiz-submit p { font-size: 12px; color: #7d6b50; }
+#quiz-result { scroll-margin-top: 110px; border-radius: 8px; }
+.quiz-breakdown { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+.quiz-breakdown > span { background: #faf6ed; border: 1px solid #d9cbb8; padding: 8px 12px; font-size: 12px; border-radius: 4px; }
+.quiz-breakdown b { margin-left: 12px; color: #8e3336; }
+.quiz-result-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+@media (max-width: 600px) {
+  .quiz-controls { padding: 16px; }
+  .quiz-topics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .quiz-topics button { padding: 10px; font-size: 13px; gap: 6px; }
+  .quiz-round-heading h3 { font-size: 22px; }
+  .quiz-round-controls { gap: 14px; }
+  .quiz-form label { padding: 11px 12px; gap: 8px; }
+  .quiz-result-actions > .button { width: 100%; }
+}
 .about-values p, .about-credit p, .about-intro p { font-size: 15px; }
 .about-credit { border-radius: 6px; }
 .source-project p, .repo-grid p { font-size: 14px; color: #746952; }

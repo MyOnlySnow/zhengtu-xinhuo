@@ -62,13 +62,6 @@ test('科研攻关计划保存、阶段更新与刷新恢复',async({page})=>{
   await expect(page.getByLabel('更新阶段')).toHaveValue('方案验证');
 });
 
-test('研学自测反馈反映实际答案',async({page})=>{
-  await page.goto('/#/study?tab=quiz');
-  for(const [i,value] of [0,2,0,1].entries())await page.locator(`input[name="q${i}"][value="${value}"]`).check();
-  await page.getByRole('button',{name:'查看研学反馈'}).click();await expect(page.locator('#quiz-result')).toContainText('本次答对 4 / 4 题');
-  await page.locator('input[name="q0"][value="1"]').check();await page.getByRole('button',{name:'查看研学反馈'}).click();await expect(page.locator('#quiz-result')).toContainText('本次答对 3 / 4 题');
-});
-
 test('长征沙盘开场与两种模式可用，时间轴可操作',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   // 网络底图不是此集成检查的前置条件，阻止外网请求可证明本地资源完整。

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {SOURCES,PEOPLE,STORIES,CASES,LANDMARKS,SPEECHES,normalizePerson,normalizeStory,normalizeLandmark} from '../js/catalog.js';
+import {SOURCES,PEOPLE,STORIES,CASES,LANDMARKS,SPEECHES,QUIZ,normalizePerson,normalizeStory,normalizeLandmark} from '../js/catalog.js';
 import {matchesContent,storySections,storyLength} from '../js/explore.js';
 import {caseLength} from '../js/case-details.js';
+import {QUIZ_TOPICS,QUIZ_TYPES} from '../js/quiz.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const qd=JSON.parse(await readFile(path.join(root,'js/qingdao.json'),'utf8'));
@@ -61,7 +62,26 @@ for(const c of CASES){
   for(const id of c.personIds||[])assert.ok(personIds.has(id));
 }
 for(const s of SPEECHES){assert.ok(s.date&&s.occasion&&s.org&&s.url&&s.points.length===3&&s.questions.length>=2);assert.ok(sourceIds.has(s.id));for(const id of s.relatedStories||[])assert.ok(ids(stories).has(id));}
+unique(QUIZ,'自测题');unique(QUIZ.map(q=>({id:q.q})),'自测题干');
+assert.equal(QUIZ.length,60);
+for(const topic of QUIZ_TOPICS)assert.ok(QUIZ.filter(q=>q.topic===topic).length>=8,`主题题目不足 ${topic}`);
+for(const type of Object.keys(QUIZ_TYPES))assert.ok(QUIZ.some(q=>q.type===type),`缺少自测题型 ${type}`);
+for(const q of QUIZ){
+  references(q);
+  assert.ok(QUIZ_TOPICS.includes(q.topic)&&QUIZ_TYPES[q.type],`自测题分类不正确 ${q.id}`);
+  assert.ok(q.q.length>=12&&q.explain.length>=45,`题干或解析不完整 ${q.id}`);
+  assert.equal(new Set(q.options).size,q.options.length,`选项重复 ${q.id}`);
+  assert.equal(q.options.length,q.type==='boolean'?2:4,`选项不完整 ${q.id}`);
+  assert.ok(q.answers.length>0&&q.answers.every(a=>Number.isInteger(a)&&a>=0&&a<q.options.length),`答案无效 ${q.id}`);
+  assert.equal(new Set(q.answers).size,q.answers.length,`答案重复 ${q.id}`);
+  assert.ok(q.type==='multiple'?q.answers.length>1&&q.answers.length<q.options.length:q.answers.length===1,`题型与答案不符 ${q.id}`);
+  assert.ok(q.reading?.label&&q.reading.href.startsWith('#/'),`缺少延伸阅读 ${q.id}`);
+  const [route,id]=q.reading.href.slice(2).split('?')[0].split('/');
+  const targets={story:ids(stories),case:ids(CASES),speech:ids(SPEECHES),person:personIds};
+  assert.ok(targets[route]?targets[route].has(id):['trail','sources','study','speeches','cases'].includes(route),`自测阅读路径不存在 ${q.id}`);
+}
+for(const c of CASES)assert.ok(QUIZ.some(q=>q.reading.href==='#/case/'+c.id),`案例未关联自测 ${c.id}`);
 assert.equal(people.filter(p=>matchesContent(p,{region:'即墨'})).length,1);
 assert.ok(stories.some(s=>matchesContent(s,{region:'即墨'})),'即墨故事筛选为空');
 assert.equal(stories.filter(s=>matchesContent(s,{theme:'长征岁月'})).length,7);
-console.log(`内容检查通过：${people.length} 位人物、${stories.length} 篇分节故事（7篇长征详文）、${CASES.length} 个案例、${landmarks.length} 处地标、${SPEECHES.length} 篇讲话、${SOURCES.length} 条来源。`);
+console.log(`内容检查通过：${people.length} 位人物、${stories.length} 篇分节故事（7篇长征详文）、${CASES.length} 个案例、${landmarks.length} 处地标、${SPEECHES.length} 篇讲话、${QUIZ.length} 道自测题、${SOURCES.length} 条来源。`);

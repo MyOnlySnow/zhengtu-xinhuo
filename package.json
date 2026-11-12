@@ -10,7 +10,8 @@
     "build": "node scripts/build.mjs",
     "dev": "node scripts/serve.mjs",
     "check:content": "node scripts/check-content.mjs",
-    "test": "npm run check:content && npm test --prefix vendor/wanli-trail && playwright test",
+    "test:quiz": "node --test scripts/quiz.test.mjs",
+    "test": "npm run check:content && npm run test:quiz && npm test --prefix vendor/wanli-trail && playwright test",
     "test:e2e": "playwright test"
   },
   "devDependencies": { "@playwright/test": "1.65.0" }

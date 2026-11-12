@@ -38,10 +38,3 @@ export const MARCH_LANDMARKS = [
  {id:'luding',name:'泸定桥',address:'四川省甘孜藏族自治州泸定县',description:'结合地理环境，学习红军飞夺泸定桥的历史。',lat:29.91,lng:102.23,region:'长征沿线',image:'assets/images/luding.webp',source:'history'},
  {id:'huining',name:'红军会宁会师旧址',address:'甘肃省白银市会宁县',description:'以会师为线索，理解顾全大局、紧密团结的精神。',lat:35.69,lng:105.05,region:'长征沿线',source:'history'},
 ];
-
-export const QUIZ = [
- {q:'长征中，哪一次会议成为党的历史上生死攸关的转折点？', options:['遵义会议','中共一大','中共七大'],answer:0,explain:'1935年1月的遵义会议是党的历史上生死攸关的转折点。'},
- {q:'三大主力红军于哪一年胜利会师？', options:['1934年','1935年','1936年'],answer:2,explain:'1936年10月，三大主力红军在会宁、将台堡地区先后会师。'},
- {q:'“半条被子”故事最直接体现了什么？', options:['军民鱼水情深','地理环境险峻','装备技术进步'],answer:0,explain:'三名女红军将半条被子留给村民，体现了党和红军与人民的深厚情谊。'},
- {q:'把长征精神转化为科研行动，应当怎样做？', options:['只展示成功结果','实事求是，完整记录失败与验证过程','以成果数量替代学术规范'],answer:1,explain:'真实记录和可复核的证据是学术规范的基础，也是实事求是的具体实践。'},
-];
