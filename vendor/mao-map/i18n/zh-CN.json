@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "title": "毛泽东生平地理轨迹",
+    "description": "通过交互式地图展示毛泽东主席的人生轨迹"
+  },
+  "ui": {
+    "stats": {
+      "title": "轨迹统计",
+      "totalEvents": "总事件数",
+      "movementCount": "移动次数",
+      "visitedPlaces": "访问省市",
+      "internationalCount": "国际移动",
+      "timeSpan": "时间跨度"
+    },
+    "timeline": {
+      "start": "开始",
+      "end": "结束",
+      "loading": "加载中..."
+    },
+    "controls": {
+      "play": "播放",
+      "pause": "暂停",
+      "prev": "上一个事件",
+      "next": "下一个事件",
+      "togglePanel": "切换控制面板",
+      "speed": "播放速度",
+      "speedFast": "快",
+      "speedNormal": "中",
+      "speedSlow": "慢",
+      "speedVeryFast": "很快",
+      "speedVerySlow": "很慢",
+      "speedOptions": {
+        "veryFast": "极快",
+        "fast": "快速",
+        "normal": "正常",
+        "slow": "慢速"
+      }
+    },
+    "animation": {
+      "settingsTitle": "动画设置",
+      "pathSpeed": "动画时长",
+      "cameraSpeed": "镜头跟随速度",
+      "cameraFollow": "镜头跟随",
+      "cameraControl": "镜头控制",
+      "cameraOn": "开启",
+      "cameraOff": "关闭",
+      "followMode": "跟随模式",
+      "followModes": {
+        "smart": "智能",
+        "path": "沿路",
+        "off": "关闭"
+      },
+      "followZoom": "跟随缩放",
+      "speedLevels": {
+        "fastest": "极快",
+        "fast": "正常",
+        "slow": "慢速",
+        "slowest": "极慢"
+      }
+    },
+    "settings": {
+      "title": "设置",
+      "desktopTitle": "桌面设置",
+      "alwaysOnTop": "置顶显示",
+      "launchAtStartup": "开机启动"
+    },
+    "update": {
+      "checkUpdate": "检查更新",
+      "updateAvailable": "发现新版本 v{version}",
+      "download": "前往下载",
+      "alreadyLatest": "已是最新版本",
+      "networkError": "网络不可用，请稍后再试"
+    },
+    "music": {
+      "title": "背景音乐",
+      "selectSong": "请选择歌曲",
+      "playlist": "播放列表",
+      "localMusic": "本地音乐",
+      "uploadBtn": "选择本地音乐文件",
+      "uploadHint": "支持 MP3, WAV, OGG 格式",
+      "close": "关闭",
+      "playPrev": "上一首",
+      "playNext": "下一首",
+      "volume": "音量"
+    },
+    "feedback": {
+      "title": "意见反馈",
+      "issues": {
+        "title": "问题反馈",
+        "desc": "发现bug或建议改进"
+      },
+      "project": {
+        "title": "项目主页",
+        "desc": "查看源码和文档"
+      },
+      "wechat": {
+        "title": "关注公众号",
+        "desc": "硅基茶水间 - 交流讨论"
+      }
+    },
+    "panel": {
+      "locationTitle": "地点详情",
+      "visitSummary": "截止当前时间点共 <span class=\"visit-count-highlight\">{count}</span> 次相关记录",
+      "visitTypes": {
+        "birth": "次出生",
+        "arrive": "次到达",
+        "depart": "次出发",
+        "transit": "次途径",
+        "activity": "次活动"
+      },
+      "eventAge": "年龄: {age}岁",
+      "orderNumber": "第{n}次",
+      "transitPrefix": "途经："
+    },
+    "progress": {
+      "event": "事件",
+      "age": "年龄",
+      "ageUnit": "岁",
+      "progress": "进度"
+    },
+    "visitType": {
+      "birth": "出生",
+      "start": "出发",
+      "destination": "到达",
+      "transit": "途径",
+      "activity": "活动"
+    }
+  },
+  "messages": {
+    "loading": "正在加载轨迹数据...",
+    "loadSuccess": "数据加载完成",
+    "loadError": "加载失败",
+    "wechatName": "硅基茶水间",
+    "wechatCopied": "公众号名称已复制到剪贴板：{name}",
+    "wechatSearch": "请搜索微信公众号：{name}",
+    "musicUploadSuccess": "本地音乐文件添加成功",
+    "musicUploadError": "请选择有效的音频文件",
+    "musicLoadError": "无法加载音频文件，请尝试上传本地文件",
+    "musicPlayError": "音频播放出错，请尝试其他歌曲",
+    "musicPlayFailed": "音频播放失败，请检查文件格式",
+    "copySuccess": "事件 {number} 数据已复制到剪贴板",
+    "copyFailed": "复制失败，请重试",
+    "copyManual": "复制失败，请手动选择并复制",
+    "copyNotSupported": "复制失败，浏览器不支持自动复制",
+    "noEventData": "当前没有可复制的事件数据"
+  },
+  "poems": [
+    "俱往矣，数风流人物，还看今朝",
+    "一万年太久，只争朝夕",
+    "雄关漫道真如铁，而今迈步从头越",
+    "江山如此多娇，引无数英雄竞折腰"
+  ],
+  "console": {
+    "mapInitComplete": "地图初始化完成",
+    "coordinateMappingComplete": "坐标映射建立完成，共",
+    "places": "个地点",
+    "internationalCoords": "国际坐标",
+    "dataLoadSuccess": "china_regions_coordinates.json 加载成功",
+    "dataLoadFailed": "外部地理数据加载失败",
+    "backupDataLoaded": "已加载备用国际坐标数据",
+    "motionPluginLoaded": "leaflet.motion 插件加载成功",
+    "motionPluginFailed": "leaflet.motion 插件未正确加载",
+    "motionResourcesCleanup": "Motion 资源清理完成",
+    "motionOptimized": "Motion 性能优化已启用",
+    "keyAnimationsPreloaded": "关键路径预加载完成"
+  },
+  "errors": {
+    "panelCloseError": "关闭面板时出错",
+    "dragListenerCleanup": "清理拖拽监听器时出错",
+    "coordMappingFailed": "无法匹配坐标",
+    "eventDataLoadFailed": "加载事件数据失败",
+    "eventDataEmpty": "mao_trajectory_events.json 格式错误或事件数据为空",
+    "trajectoryDataEmpty": "轨迹数据为空",
+    "geoDataLoadFailed": "地理数据加载失败",
+    "appInitFailed": "应用初始化失败",
+    "motionPluginError": "leaflet.motion 插件未正确加载，请确保已正确引入插件文件"
+  },
+  "journey": {
+    "totalRecords": "共 {total} 条足迹",
+    "progress": "足迹进度",
+    "viewMode": "显示模式",
+    "playbackMode": "播放",
+    "browseMode": "浏览",
+    "appearance": "显示与外观",
+    "skin": "界面皮肤",
+    "transparency": "透明度",
+    "blur": "背景模糊",
+    "classicSkin": "经典 · 白与蓝",
+    "paperSkin": "纸色 · 暖调",
+    "showEvent": "展开事件说明",
+    "hideEvent": "收起事件说明",
+    "language": "界面语言",
+    "preview": "预览中 · 松开定位",
+    "brand": "跟着教员走遍中国",
+    "subtitle": "毛泽东生平足迹 · 1893—1976",
+    "headerNote": "以时间为经，以山河为纬",
+    "tools": "应用工具",
+    "archive": "一生足迹",
+    "timeline": "足迹年表",
+    "records": "条历史记录",
+    "search": "搜索地点、事件或年份",
+    "clearSearch": "清除搜索",
+    "period": "历史时期",
+    "allPeriods": "全部时期 · 1893—1976",
+    "loading": "正在整理年表…",
+    "findCurrent": "回到当前",
+    "eventList": "历史事件列表",
+    "noResults": "没有找到相关足迹",
+    "searchHint": "试试其他地名、年份，或查看全部时期。",
+    "reset": "重置筛选",
+    "archiveNote": "循着足迹，读懂每一段历程。",
+    "map": "足迹地图",
+    "chapter": "当前篇章",
+    "routeScope": "足迹显示",
+    "accumulated": "累计足迹",
+    "thisJourney": "本次行程",
+    "focusCurrent": "定位当前行程",
+    "fitJourney": "查看已走足迹",
+    "zoomIn": "放大地图",
+    "zoomOut": "缩小地图",
+    "mapTools": "地图工具",
+    "showMapTools": "展开地图工具",
+    "hideMapTools": "收起地图工具",
+    "currentRoute": "当前行程",
+    "historyRoute": "过往行程",
+    "routeNote": "连线仅示意事件行程",
+    "loadingTitle": "展开这段历程",
+    "currentEvent": "此刻足迹",
+    "source": "史料与记录",
+    "copyRecord": "复制事件资料",
+    "readMore": "查看史料",
+    "journey": "山河之间 · 人生足迹",
+    "recordsShort": "条记录",
+    "player": "时间轴播放控制",
+    "explore": "沿时间浏览足迹",
+    "timelineSlider": "足迹时间轴",
+    "shortcuts": "键盘：空格播放 / 暂停，左右方向键切换事件。",
+    "soundtrack": "旅途伴奏",
+    "wechatHint": "扫描二维码关注公众号",
+    "placeArchive": "地点档案",
+    "resultCount": "{count} / {total} 条记录",
+    "unknownPlace": "地点待补充",
+    "record": "历史记录",
+    "noSource": "本条记录暂未补充史料出处。可复制事件资料，供进一步查证或提交校订。",
+    "hasSource": "已有出处",
+    "sourcePending": "出处待补充",
+    "partialCoordinates": "部分地点缺少可用坐标，地图仅显示已匹配的地点。",
+    "coordinateNote": "地图按资料中的行政区划定位，连线示意行程，不代表精确道路。",
+    "routeDescription": "本次行程：{places}",
+    "firstFootprint": "足迹的起点",
+    "localRecord": "此条为地点活动记录，无跨地点行程",
+    "playing": "正在按序播放",
+    "finished": "历程已浏览完 · 可从头重播",
+    "closeSource": "收起史料",
+    "musicProgress": "音乐播放进度",
+    "poetry": {
+      "open": "查看终章彩蛋",
+      "entry": "终章",
+      "eyebrow": "1893 — 1976 · 足迹终章",
+      "title": "山河走遍，诗意长留",
+      "hint": "以一句诗，为这段旅程作结。",
+      "next": "换一句",
+      "replay": "从头重播",
+      "return": "回到地图"
+    },
+    "moments": {
+      "pickPoem": "拾一句诗",
+      "poemEyebrow": "沿途拾诗 · 毛泽东诗词节选",
+      "poemDate": "创作于 {date} · 原作节选",
+      "poemSource": "题名与创作背景 · 人民网",
+      "continueJourney": "继续这段旅程",
+      "openStamp": "{place} · 查看此地足迹",
+      "stampHint": "查看截至此刻的地点记录",
+      "recall": "回望足迹",
+      "finishRecall": "结束回望",
+      "recallDrawing": "循着来路，重读这一生的山河。",
+      "recallComplete": "足迹已展开，可以停留片刻。",
+      "places": {
+        "shaoshan": "韶山",
+        "changsha": "长沙",
+        "jinggangshan": "井冈山",
+        "ruijin": "瑞金",
+        "zunyi": "遵义",
+        "yanan": "延安",
+        "beijing": "北京"
+      },
+      "poems": {
+        "changsha": {
+          "title": "沁园春·长沙",
+          "context": "这首词写于1925年。沿着此刻的长沙足迹，回读橘子洲头的秋日意象。"
+        },
+        "autumn": {
+          "title": "西江月·秋收起义",
+          "context": "这首1927年的词记述了秋收起义。在三湾改编这一节点，回望起义的来路。"
+        },
+        "march": {
+          "title": "七律·长征",
+          "context": "这首诗题注1935年10月，以诗句回望长征。此处关联的是中央红军到达吴起镇的记录。"
+        }
+      }
+    },
+    "periods": {
+      "youth": "求学与探索",
+      "awakening": "革命初期",
+      "revolution": "土地革命",
+      "march": "长征岁月",
+      "yanan": "延安与解放战争",
+      "nation": "新中国岁月"
+    }
+  }
+}

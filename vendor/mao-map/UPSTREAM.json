@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/sansan0/mao-map",
+  "commit": "fd624f1492282fe6cf101922b64448c325de938c",
+  "license": "GPL-3.0",
+  "subset": "Web application sources and static assets; excludes Tauri native clients and build tooling."
+}

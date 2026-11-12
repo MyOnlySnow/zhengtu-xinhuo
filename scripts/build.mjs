@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
+import {buildFootprints} from './build-footprints.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const dist = path.join(root, 'dist');
@@ -16,6 +17,7 @@ await rm(dist, {recursive:true, force:true});
 await mkdir(dist, {recursive:true});
 for(const file of ['index.html','css','js','assets']) await cp(path.join(root,file),path.join(dist,file),{recursive:true});
 await cp(path.join(vendor,'dist'),path.join(dist,'trail'),{recursive:true});
+await buildFootprints(root,dist);
 const routes={};
 for(const [key,file] of Object.entries({first:'red-first',second:'red-second',fourth:'red-fourth',n25:'red-25th'})) {
   routes[key]=(await import(pathToFileURL(path.join(vendor,`src/mock/routes/${file}.js`)).href)).default;

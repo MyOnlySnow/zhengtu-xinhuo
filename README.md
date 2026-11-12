@@ -9,6 +9,8 @@
 
 网站通过 GitHub Pages 发布，访客可以直接浏览，无需 GitHub 账号。
 
+长征沙盘新增“长征足迹年表”和“更多数字研学”入口：本地整合GPL-3.0的 `sansan0/mao-map`，默认定位1934—1936年；提供长征战役立体推演、哈达铺三维街区与轻量路线图仓库的延伸入口。检索结果、许可与史实修订见 [仓库检索记录](docs/longmarch-repositories.md)。
+
 ## 本地运行
 
 使用 Node.js 22 或更新版本（本机已有 `/home/sdux17/.nvm/versions/node/v22.23.2/bin`）。

@@ -51,6 +51,11 @@
 
 ## 可视化与数字研学项目研究
 
+- [sansan0/mao-map](https://github.com/sansan0/mao-map)：本次新增本地独立整合，固定提交 `fd624f1492282fe6cf101922b64448c325de938c`。网页完整源码与静态资源保存在 `vendor/mao-map/`，GPL-3.0许可证保留为 `vendor/mao-map/LICENSE`；构建适配脚本 `scripts/build-footprints.mjs` 也遵循GPL-3.0。发布到 `dist/footprints/`，保留原作者、依赖署名与来源状态，附修改说明。数据调整与源码获取方式见 `docs/longmarch-repositories.md`。原项目图片与音频的权利归各自权利人，不另行授权。
+- [youxuels/long-march-map](https://github.com/youxuels/long-march-map)：README声明MIT，未提供独立LICENSE文件；仅供代码研究，未复制源码与历史数据。
+- [kirinzhang/redwisdom](https://github.com/kirinzhang/redwisdom)：未见明确开放许可证，仅链接原站长征战役推演，不复制源码、地形或文章。
+- [Qyjay/AI-Long-March-Back-End](https://github.com/Qyjay/AI-Long-March-Back-End)：后端方案参考，未复制源码、配置或数据，未接入模型接口。
+
 - [apache/echarts](https://github.com/apache/echarts)：Apache-2.0，研究时间轴与交互数据叙事，本次未引入新运行依赖。
 - [Leaflet/Leaflet](https://github.com/Leaflet/Leaflet)：BSD-2-Clause，本网站已使用的地图组件。
 - [Leizhidong-creator/Red-Army-Street](https://github.com/Leizhidong-creator/Red-Army-Street)：哈达铺红军街数字研学项目，用于比较地点叙事和场景导览，未复制其代码。GitHub 未识别出该仓库的开放许可证。
