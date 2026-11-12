@@ -15,21 +15,27 @@ test('主导航只有三个入口，学习与资源栏目归入下级菜单',asy
   await expect(page.locator('#resources-menu')).toBeHidden();
 });
 
-test('首页展示三个站内数字体验，并移除外站体验入口',async({page})=>{
+test('首页和沙盘删除重复数字体验栏目，不提供GitHub跳转卡片',async({page})=>{
   await page.goto('/');
-  const hub=page.locator('.digital-hub');
-  await expect(hub.locator('.march-resource-card')).toHaveCount(3);
-  expect(await hub.locator('a').evaluateAll(links=>links.every(a=>a.getAttribute('href').startsWith('#/')))).toBeTruthy();
-  for(const route of ['#/','#/resources','#/trail','#/sources']){
+  await expect(page.locator('h1')).toBeVisible();
+  await expect(page.locator('.digital-hub')).toHaveCount(0);
+  await expect(page.locator('.march-resource-card')).toHaveCount(0);
+  await expect(page.locator('main')).not.toContainText('循着地图，走进历史现场');
+  await expect(page.locator('main a[href*="github.com"]')).toHaveCount(0);
+  for(const route of ['#/','#/resources','#/trail','#/trail?mode=footprints','#/trail?mode=light','#/sources']){
     await page.goto('/'+route);await expect(page.locator('h1')).toBeVisible();
     await expect(page.locator('a[href*="redwisdom"],a[href*="Red-Army-Street"]')).toHaveCount(0);
     await expect(page.locator('main')).not.toContainText('哈达铺红军街');
     await expect(page.locator('main')).not.toContainText('长征战役立体推演');
+    if(route.startsWith('#/trail')){
+      await expect(page.locator('main')).not.toContainText('数字研学拓展');
+      await expect(page.locator('.march-resource-card')).toHaveCount(0);
+      await expect(page.locator('main a[href*="github.com"]')).toHaveCount(0);
+      await expect(page.locator('.trail-frame')).toBeVisible();
+    }
   }
-  await page.goto('/');
-  await hub.getByRole('link',{name:'打开足迹年表'}).click();
-  await expect(page).toHaveURL(/mode=footprints/);
-  await expect(page.locator('.march-tabs .active')).toHaveText('长征足迹年表');
+  await page.goto('/#/resources');
+  expect(await page.locator('.march-resource-card a').evaluateAll(links=>links.every(a=>a.getAttribute('href').startsWith('#/')))).toBeTruthy();
 });
 
 test('平板菜单支持键盘关闭与重新导航，手机入口不溢出',async({page})=>{
