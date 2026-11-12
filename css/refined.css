@@ -79,7 +79,7 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
 .anniversary-strip .container { height: 56px; }
 .anniversary-strip b { font-size: 16px; letter-spacing: .5px; }
 
-/* 数字研学馆：直接展示地图、战役、旧址三个体验。 */
+/* 数字研学馆：三个本地部署的地图与年表体验。 */
 .digital-hub { padding-top: 56px; }
 .march-resource-grid { gap: 24px; }
 .march-resource-grid.home-resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -733,4 +733,64 @@ h2 { font-size: clamp(27px, 2.4vw, 34px); letter-spacing: .3px; }
   .story-detail-layout { display: block; }
   .march-resource-card, .person-card, .case-card { box-shadow: none; }
   .article-section p { color: #222; }
+}
+
+/* 三个主入口与分组下级导航。 */
+.site-header .header-inner { justify-content: space-between; }
+.site-header #main-nav { flex: 0 1 auto; gap: 38px; margin-left: auto; align-items: stretch; }
+.site-header .nav-item { position: relative; height: 100%; }
+.site-header .nav-entry { display: flex; align-items: center; height: 100%; gap: 4px; position: relative; }
+.site-header .nav-entry > a { display: flex; align-items: center; min-height: 46px; font-size: 15px; font-weight: 500; padding: 8px 6px; }
+.site-header .nav-item.active > .nav-entry::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 15px; height: 2px; background: var(--red); }
+.site-header .nav-item.active > .nav-entry > a { color: var(--red); }
+.site-header .nav-toggle { display: grid; place-items: center; width: 34px; height: 40px; border: 0; background: transparent; border-radius: 4px; color: var(--red); cursor: pointer; font-size: 20px; }
+.site-header .nav-toggle:hover, .site-header .nav-toggle[aria-expanded="true"] { background: #efe7da; }
+.site-header .nav-toggle span { display: block; transition: transform .2s; }
+.site-header .nav-toggle[aria-expanded="true"] span { transform: rotate(180deg); }
+.site-header .menu-toggle[aria-expanded="true"] { position: relative; }
+.site-header .menu-toggle[aria-expanded="true"] span { position: absolute; left: 10px; top: 50%; margin: 0; }
+.site-header .menu-toggle[aria-expanded="true"] span:first-child { transform: rotate(45deg); }
+.site-header .menu-toggle[aria-expanded="true"] span:last-child { transform: rotate(-45deg); }
+.site-header .nav-dropdown { position: absolute; right: 0; top: calc(100% - 1px); width: 520px; max-width: calc(100vw - 48px); padding: 24px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 24px; background: #fffdf8; border: 1px solid #e0d5c4; border-top: 3px solid var(--red); box-shadow: 0 14px 30px #30251a18; border-radius: 0 0 8px 8px; white-space: normal; max-height: calc(100dvh - 100px); overflow-y: auto; }
+.site-header .nav-dropdown[hidden] { display: none; }
+.site-header .nav-group { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.site-header .nav-group > span { font-size: 12px; color: #8e7453; padding: 2px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 5px; }
+.site-header .nav-group > a { display: block; padding: 9px 10px; border-radius: 4px; font-size: 14px; line-height: 1.65; }
+.site-header .nav-group > a:hover, .site-header .nav-group > a[aria-current="page"] { color: var(--red); background: #f1e8db; }
+.home-branch { background: #eeeae1; border-top: 1px solid var(--line); }
+#branch { scroll-margin-top: 100px; }
+.home-branch .about-intro { padding-top: 5px; }
+.home-branch .activity-empty { background: #f8f5ec; }
+.home-branch .about-credit { margin-bottom: 0; }
+.resources-page .march-resource-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.resource-directory { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; margin-top: 36px; }
+.resource-directory > a { border: 1px solid #ded3c1; padding: 28px; border-radius: 8px; background: #eeeae0; }
+.resource-directory h2 { font-size: 24px; margin: 12px 0; }
+.resource-directory p { font-size: 14px; color: var(--muted); }
+.resource-directory > a:hover { border-color: #b99678; }
+@media (max-width: 1180px) {
+  .site-header #main-nav { display: none; margin: 0; max-height: calc(100dvh - 90px); overflow-y: auto; gap: 0; padding: 12px 24px; }
+  .site-header #main-nav.open { display: block; }
+  .site-header .nav-item { height: auto; }
+  .site-header .nav-item + .nav-item { border-top: 1px solid #e9dfd1; }
+  .site-header .nav-entry { min-height: 50px; justify-content: space-between; }
+  .site-header .nav-entry > a { flex: 1; font-size: 15px; padding: 12px 10px; }
+  .site-header .nav-item.active > .nav-entry::after { display: none; }
+  .site-header .nav-item.active > .nav-entry > a { font-weight: 600; }
+  .site-header .nav-toggle { width: 44px; height: 44px; }
+  .site-header .nav-dropdown { position: static; width: 100%; max-width: none; max-height: none; box-shadow: none; border: 1px solid #dfd2be; border-radius: 6px; padding: 18px; margin-bottom: 12px; background: #f6f0e5; }
+  .resources-page .march-resource-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 650px) {
+  .site-header #main-nav { padding: 10px 20px; max-height: calc(100dvh - 68px); }
+  .site-header .nav-dropdown { gap: 15px; padding: 14px 10px; }
+  .site-header .nav-group > span { font-size: 11px; padding-inline: 6px; }
+  .site-header .nav-group > a { font-size: 13px; padding: 10px 6px; }
+  .resources-page .march-resource-grid, .resource-directory { grid-template-columns: 1fr; }
+  .resource-directory { gap: 18px; margin-top: 24px; }
+  .resource-directory > a { padding: 24px; }
+  .home-branch .about-intro h2 { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header .nav-toggle span { transition: none; }
 }

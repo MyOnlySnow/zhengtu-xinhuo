@@ -5,9 +5,9 @@
 | 仓库 | 功能 | 许可核对 | 本站处理 |
 | --- | --- | --- | --- |
 | [sansan0/mao-map](https://github.com/sansan0/mao-map) | 生平足迹、年表、搜索、地图联动、出处阅读 | LICENSE 为 GPL-3.0 | 本地独立网页整合；固定 fd624f1492282fe6cf101922b64448c325de938c；保存网页源码、数据与许可 |
-| [youxuels/long-march-map](https://github.com/youxuels/long-march-map) | 14个节点，路线播放，三路红军 | README 声明 MIT；没有独立 LICENSE 文件 | 代码参考入口；历史统计、部分引语和日期尚需核对，未复制 |
-| [kirinzhang/redwisdom](https://github.com/kirinzhang/redwisdom) | 长征全图、六个战役沙盘、地形与时间轴 | 未见明确开放许可证 | 战役页面外链；未复制代码、地形和文本 |
-| [Leizhidong-creator/Red-Army-Street](https://github.com/Leizhidong-creator/Red-Army-Street) | 哈达铺五处旧址，手绘地图与GLB模型 | 未见明确开放许可证 | 在线街区外链；未复制模型、图片、校徽和源码 |
+| [youxuels/long-march-map](https://github.com/youxuels/long-march-map) | 单页地图与路线播放 | README 声明 MIT；没有独立 LICENSE 文件 | 本地部署于light-march，内嵌在本站；替换为本站9节点、四路航点及对应来源 |
+| [kirinzhang/redwisdom](https://github.com/kirinzhang/redwisdom) | 长征全图、六个战役沙盘、地形与时间轴 | 未见明确开放许可证 | 按用户要求删除外站体验及资源卡片；未复制代码、地形和文本 |
+| [Leizhidong-creator/Red-Army-Street](https://github.com/Leizhidong-creator/Red-Army-Street) | 哈达铺五处旧址，手绘地图与GLB模型 | 未见明确开放许可证 | 按用户要求删除外站体验及资源卡片；未复制模型、图片、校徽和源码 |
 | [Qyjay/AI-Long-March-Back-End](https://github.com/Qyjay/AI-Long-March-Back-End) | FastAPI路线节点、保存进度、RAG问答 | 未见明确开放许可证 | 架构研究，当前静态部署未接入后端或模型服务 |
 | [maxmiku/WebDesignCompetition2021](https://github.com/maxmiku/WebDesignCompetition2021) | 长征背景策略小游戏 | Apache-2.0 | 记录为后续交互参考；抽象规则不适合作为史实推演，本次不加载 |
 | [XiaoHan-612/changzheng](https://github.com/XiaoHan-612/changzheng) | 长征营地场景、模型裁决与审计日志 | 未见明确开放许可证 | 需要模型服务与服务端，不适合直接放入当前GitHub Pages |

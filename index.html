@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/expanded.css">
-  <link rel="stylesheet" href="css/refined.css?v=7">
+  <link rel="stylesheet" href="css/refined.css?v=8">
   <script src="assets/vendor/leaflet/leaflet.js" defer></script>
-  <script type="module" src="js/app.js?v=7"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </head>
 <body>
   <a class="skip-link" href="#content">跳转到主要内容</a>
@@ -21,14 +21,27 @@
       <a class="brand" href="#/" aria-label="征途薪火首页"><span class="brand-seal">征</span><span><strong>征途<span class="brand-dot">·</span>薪火</strong><small>长征精神数字研学</small></span></a>
       <button class="menu-toggle" aria-label="展开导航" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
       <nav id="main-nav" aria-label="主导航">
-        <a href="#/" data-nav="home">首页</a><a href="#/speeches" data-nav="speeches">重要讲话</a><a href="#/trail" data-nav="trail">长征沙盘</a><a href="#/people" data-nav="people">人物故事</a><a href="#/map" data-nav="map">研学地图</a><a href="#/cases" data-nav="cases">典型案例</a><a href="#/study" data-nav="study">学思践悟</a><a href="#/about" data-nav="about">关于支部</a>
+        <div class="nav-item" data-nav="home"><div class="nav-entry"><a href="#/">首页</a></div></div>
+        <div class="nav-item" data-nav="study">
+          <div class="nav-entry"><a href="#/study">学思践悟</a><button class="nav-toggle" type="button" aria-label="展开学思践悟菜单" aria-expanded="false" aria-controls="study-menu"><span aria-hidden="true">⌄</span></button></div>
+          <div class="nav-dropdown" id="study-menu" hidden>
+            <div class="nav-group"><span>学 · 理论与历史</span><a href="#/speeches">重要讲话</a><a href="#/people">人物故事</a><a href="#/study?tab=stories">故事共读与宣讲</a></div>
+            <div class="nav-group"><span>做 · 实践与体会</span><a href="#/cases">典型案例</a><a href="#/study?tab=practice">科研攻关计划</a><a href="#/study?tab=quiz">研学自测</a><a href="#/notebook">我的研学</a></div>
+          </div>
+        </div>
+        <div class="nav-item" data-nav="resources">
+          <div class="nav-entry"><a href="#/resources">拓展资源</a><button class="nav-toggle" type="button" aria-label="展开拓展资源菜单" aria-expanded="false" aria-controls="resources-menu"><span aria-hidden="true">⌄</span></button></div>
+          <div class="nav-dropdown" id="resources-menu" hidden>
+            <div class="nav-group"><span>地图与数字体验</span><a href="#/trail">四路红军沙盘</a><a href="#/trail?mode=footprints">长征足迹年表</a><a href="#/trail?mode=light">轻量长征路线图</a><a href="#/map">研学地图</a></div>
+            <div class="nav-group"><span>资料与出处</span><a href="#/resources">全部拓展资源</a><a href="#/sources">内容与项目来源</a></div>
+          </div>
+        </div>
       </nav>
-      <a class="header-action" href="#/notebook">我的研学 <span aria-hidden="true">↗</span></a>
     </div>
   </header>
   <main id="content" tabindex="-1"><div class="loading">正在展开这段征途……</div></main>
   <footer class="site-footer">
-    <div class="container footer-main"><div><a class="footer-brand" href="#/">征途·薪火</a><p>循着信仰的足迹，书写青春的回答。</p><small data-branch></small></div><div class="footer-links"><a href="#/study">学习资料</a><a href="#/trail?mode=resources">数字研学馆</a><a href="#/sources">内容来源</a><a href="#/about">关于支部</a><a href="#/notebook">研学手记</a></div></div>
+    <div class="container footer-main"><div><a class="footer-brand" href="#/">征途·薪火</a><p>循着信仰的足迹，书写青春的回答。</p><small data-branch></small></div><div class="footer-links"><a href="#/study">学思践悟</a><a href="#/resources">拓展资源</a><a href="#/sources">内容来源</a><a href="#/?section=branch">关于支部</a><a href="#/notebook">研学手记</a></div></div>
     <div class="container footer-bottom"><span>2026 · 学·做在支部</span><span>铭记来时路 · 奋进新征程</span></div>
   </footer>
   <div id="toast" role="status" aria-live="polite"></div>

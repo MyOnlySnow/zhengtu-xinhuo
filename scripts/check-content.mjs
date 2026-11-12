@@ -6,6 +6,7 @@ import {SOURCES,PEOPLE,STORIES,CASES,LANDMARKS,SPEECHES,QUIZ,normalizePerson,nor
 import {matchesContent,storySections,storyLength} from '../js/explore.js';
 import {caseLength} from '../js/case-details.js';
 import {QUIZ_TOPICS,QUIZ_TYPES} from '../js/quiz.js';
+import {MARCH_RESOURCES,REPOSITORIES} from '../js/repositories.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const qd=JSON.parse(await readFile(path.join(root,'js/qingdao.json'),'utf8'));
@@ -14,6 +15,12 @@ const stories=STORIES.map(normalizeStory);
 const landmarks=[...LANDMARKS,...qd.flatMap(p=>p.landmarks.map(l=>({...l,lat:l.coordinates.lat,lng:l.coordinates.lng,region:'青岛'})))].map(normalizeLandmark);
 const ids=rows=>new Set(rows.map(x=>x.id));
 const sourceIds=ids(SOURCES),personIds=ids(people),placeIds=ids(landmarks);
+assert.equal(MARCH_RESOURCES.length,3,'站内长征数字体验');
+for(const r of MARCH_RESOURCES){
+  assert.match(r.href,/^#\/trail(?:\?mode=(?:footprints|light))?$/,'体验入口必须在本站');
+  assert.ok(r.title&&r.description&&r.action&&r.repo,'数字体验信息不完整');
+}
+assert.ok(!REPOSITORIES.some(r=>/redwisdom|Red-Army-Street/.test(r.url)),'已移除的外站体验不能保留入口');
 function unique(rows,name){assert.equal(ids(rows).size,rows.length,`${name} 存在重复ID`);}
 function references(item){
   const refs=item.sourceIds||[item.source].filter(Boolean);

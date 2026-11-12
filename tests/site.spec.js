@@ -81,7 +81,7 @@ test('长征沙盘开场与两种模式可用，时间轴可操作',async({page}
 test('手机导航、人物、地图、故事与表单均无横向溢出',async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.goto('/');
   await expect(page.locator('h1')).toBeVisible();await page.screenshot({path:'docs/screenshots/home-mobile.png',fullPage:true});
-  await page.getByRole('button',{name:'展开导航'}).click();await page.locator('#main-nav').getByRole('link',{name:'人物故事',exact:true}).click();
+  await page.getByRole('button',{name:'展开导航'}).click();await page.getByRole('button',{name:'展开学思践悟菜单'}).click();await page.locator('#main-nav').getByRole('link',{name:'人物故事',exact:true}).click();
   await expect(page.locator('h1')).toHaveText('与榜样同行');
   for(const path of ['#/people','#/person/dengenming','#/map?place=luding','#/story/blanket','#/study?tab=practice','#/notebook','#/about']){
     await page.goto('/'+path);await expect(page.locator('h1')).toBeVisible();

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import {buildFootprints} from './build-footprints.mjs';
+import {buildLightMarch} from './build-light-march.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const dist = path.join(root, 'dist');
@@ -23,6 +24,7 @@ for(const [key,file] of Object.entries({first:'red-first',second:'red-second',fo
   routes[key]=(await import(pathToFileURL(path.join(vendor,`src/mock/routes/${file}.js`)).href)).default;
 }
 await writeFile(path.join(dist,'js/routes.json'),JSON.stringify(routes));
+await buildLightMarch(root,dist,routes);
 await writeFile(path.join(dist,'.nojekyll'),'');
 await cp(path.join(root,'THIRD_PARTY.md'),path.join(dist,'THIRD_PARTY.md'));
 const qd=JSON.parse(await readFile(path.join(dist,'js/qingdao.json'),'utf8'));

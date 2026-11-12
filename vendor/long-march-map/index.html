@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>红军长征路线图 — 1934-1936</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e2dc;
+  --accent: #b91c1c;
+  --accent-light: #dc2626;
+  --accent-glow: rgba(185,28,28,0.25);
+  --gold: #92400e;
+  --gold-light: #b45309;
+  --blue: #1d4ed8;
+  --font-display: 'Georgia', 'Iowan Old Style', 'Noto Serif SC', serif;
+  --font-body: 'Inter', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  grid-template-rows: 1fr;
+  height: 100vh;
+  width: 100vw;
+}
+
+.sidebar {
+  grid-column: 1;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.sidebar-header {
+  padding: 28px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
+}
+
+.sidebar-header h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--fg);
+  margin-bottom: 4px;
+}
+
+.sidebar-header .subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.sidebar-header .stat-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-item .stat-val {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-item .stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.sidebar-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.timeline-container {
+  flex-shrink: 0;
+  max-height: 45%;
+  overflow-y: auto;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.timeline-container::-webkit-scrollbar { width: 4px; }
+.timeline-container::-webkit-scrollbar-track { background: transparent; }
+.timeline-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.timeline-item:hover {
+  background: #fef2f2;
+}
+
+.timeline-item.active {
+  background: #fef2f2;
+}
+
+.timeline-dot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d5db;
+  border: 2px solid var(--surface);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.timeline-item.battle .timeline-dot { background: var(--accent); }
+.timeline-item.meeting .timeline-dot { background: var(--gold-light); }
+.timeline-item.crossing .timeline-dot { background: var(--blue); }
+.timeline-item.active .timeline-dot {
+  background: var(--accent-light);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  transform: scale(1.2);
+}
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+  margin-top: 4px;
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-date {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+.timeline-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+  line-height: 1.4;
+}
+
+.timeline-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+
+.tag-battle { background: #fef2f2; color: var(--accent); }
+.tag-meeting { background: #fffbeb; color: var(--gold); }
+.tag-crossing { background: #eff6ff; color: var(--blue); }
+.tag-event { background: #f3f4f6; color: var(--muted); }
+
+.detail-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.detail-panel::-webkit-scrollbar { width: 4px; }
+.detail-panel::-webkit-scrollbar-track { background: transparent; }
+.detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 28px;
+}
+
+.detail-empty .empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.detail-empty .empty-text {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.detail-content {
+  padding: 24px 28px;
+  animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.detail-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.detail-province {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.detail-province::before {
+  content: '📍 ';
+}
+
+.detail-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+.detail-desc {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #374151;
+}
+
+.detail-quote {
+  margin: 16px 0;
+  padding: 14px 18px;
+  border-left: 3px solid var(--accent);
+  background: #fef2f2;
+  border-radius: 0 8px 8px 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.detail-figure {
+  margin: 16px 0;
+  padding: 16px;
+  background: #fafaf8;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.detail-figure .figure-title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.detail-figure .figure-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.detail-figure .figure-item {
+  text-align: center;
+  padding: 10px 8px;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.detail-figure .figure-val {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.detail-figure .figure-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.map-area {
+  grid-column: 2;
+  position: relative;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.leaflet-container {
+  background: #f0ede8 !important;
+}
+
+.legend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.legend-title {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(0,0,0,0.04);
+  z-index: 1000;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.play-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  padding: 8px 20px;
+  z-index: 1000;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.play-btn:hover {
+  background: var(--accent-light);
+  transform: scale(1.05);
+}
+
+.play-label {
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 80px;
+}
+
+.play-label span {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.marker-icon {
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+.marker-icon:hover {
+  transform: scale(1.3);
+}
+
+.marker-icon.battle { background: #dc2626; }
+.marker-icon.meeting { background: #d97706; }
+.marker-icon.crossing { background: #2563eb; }
+.marker-icon.event { background: #6b7280; }
+
+.marker-icon.active {
+  transform: scale(1.5);
+  box-shadow: 0 0 0 4px rgba(220,38,38,0.25), 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 999 !important;
+}
+
+.pulse-icon {
+  border-radius: 50%;
+  animation: mapPulse 2s ease-in-out infinite;
+}
+
+@keyframes mapPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(2.5); opacity: 0; }
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(255,255,255,0.98) !important;
+  color: var(--fg) !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255,255,255,0.98) !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-family: var(--font-body) !important;
+  color: var(--fg) !important;
+  line-height: 1.5 !important;
+}
+
+.popup-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 3px;
+  color: var(--fg);
+}
+
+.popup-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.popup-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-top: 4px;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(255,255,255,0.95) !important;
+  color: var(--fg) !important;
+  border-color: var(--border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #fff !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255,255,255,0.7) !important;
+  color: var(--muted) !important;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--muted) !important;
+}
+
+.leaflet-control-layers {
+  background: rgba(255,255,255,0.95) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+  color: var(--fg) !important;
+}
+
+.leaflet-control-layers-list {
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+}
+
+.leaflet-control-layers-selector {
+  margin-right: 4px !important;
+}
+
+.leaflet-control-layers-separator {
+  border-color: var(--border) !important;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 50vh 1fr;
+  }
+  .sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    border-right: none;
+    border-top: 1px solid var(--border);
+  }
+  .map-area {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .legend { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>红军长征路线图</h1>
+      <div class="subtitle">1934年10月 — 1936年10月 · 真实地理标注</div>
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-val">25,000</span>
+          <span class="stat-label">里 (12,500km)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">2年</span>
+          <span class="stat-label">历时</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">14省</span>
+          <span class="stat-label">途经</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-body">
+      <div class="timeline-container" id="timeline"></div>
+      <div class="detail-panel" id="detailPanel">
+        <div class="detail-empty" id="detailEmpty">
+          <div class="empty-icon">🗺️</div>
+          <div class="empty-text">点击左侧时间线或地图标记<br/>查看详细历史资料</div>
+        </div>
+        <div class="detail-content" id="detailContent" style="display:none"></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="map-area">
+    <div id="map"></div>
+
+    <div class="legend">
+      <div class="legend-title">图例</div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#dc2626"></div>
+        <span>战役 / 战斗</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#d97706"></div>
+        <span>会议 / 会师</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#2563eb"></div>
+        <span>渡江 / 天险</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#6b7280"></div>
+        <span>重要事件</span>
+      </div>
+      <div class="legend-item" style="margin-top:6px; padding-top:6px; border-top:1px solid #e5e7eb">
+        <div style="width:20px; height:3px; background:#dc2626; border-radius:1px; flex-shrink:0"></div>
+        <span>中央红军路线</span>
+      </div>
+      <div class="legend-item">
+        <div style="width:20px; height:3px; background:#d97706; border-radius:1px; flex-shrink:0; opacity:0.6"></div>
+        <span>红二方面军</span>
+      </div>
+      <div class="legend-item">
+        <div style="width:20px; height:3px; background:#2563eb; border-radius:1px; flex-shrink:0; opacity:0.6"></div>
+        <span>红四方面军</span>
+      </div>
+    </div>
+
+    <div class="play-controls">
+      <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+      <div class="play-label" id="playLabel">点击 <span>播放</span> 重走长征路</div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const events = [
+  {
+    id: 'ruijin',
+    name: '瑞金出发',
+    date: '1934年10月10日',
+    type: 'event',
+    tag: '出发',
+    lat: 25.886, lng: 116.035,
+    province: '江西·瑞金',
+    desc: '中央红军主力第一方面军连同机关共8.6万余人，从福建长汀、宁化和江西瑞金、于都等地出发，开始战略转移。此前，由于第五次反"围剿"失败，中央苏区日益缩小，红军被迫突围。博古、李德的错误军事路线导致红军在根据地无法立足，不得不进行战略大转移。',
+    quote: '红军不怕远征难，万水千山只等闲。 — 毛泽东《七律·长征》',
+    figures: [
+      { val: '8.6万', label: '出发人数' },
+      { val: '1/3', label: '携带物资占比' },
+      { val: '5次', label: '反围剿失败' },
+      { val: '14', label: '途经省份' }
+    ]
+  },
+  {
+    id: 'xiangjiang',
+    name: '湘江战役',
+    date: '1934年11月27日—12月1日',
+    type: 'battle',
+    tag: '战役',
+    lat: 25.61, lng: 110.71,
+    province: '广西·全州',
+    desc: '湘江战役是长征中最惨烈的一战。红军在湘江两岸与国民党军激战五昼夜，终于突破第四道封锁线。但代价极为惨重——从出发时的8.6万人锐减至3万余人。湘江水被鲜血染红，当地百姓流传"三年不饮湘江水，十年不食湘江鱼"。此战暴露了博古、李德错误指挥的严重后果。',
+    quote: '湘江一战，红军损失过半。这是"左"倾错误路线造成的严重后果。 — 《中国共产党的九十年》',
+    figures: [
+      { val: '5万+', label: '牺牲人数' },
+      { val: '3万', label: '渡江后剩余' },
+      { val: '5天', label: '激战时长' },
+      { val: '4道', label: '突破封锁线' }
+    ]
+  },
+  {
+    id: 'zunyi',
+    name: '遵义会议',
+    date: '1935年1月15日—17日',
+    type: 'meeting',
+    tag: '会议',
+    lat: 27.725, lng: 106.928,
+    province: '贵州·遵义',
+    desc: '遵义会议是中国共产党历史上生死攸关的转折点。会议在贵州遵义召开，批判了博古、李德的军事指挥错误，确立了毛泽东在党和红军中的领导地位。从此，红军在毛泽东的指挥下，灵活机动，转危为安，开始了从胜利走向胜利的新篇章。会议会址位于遵义老城子尹路96号，为国民党二十五军第二师师长柏辉章的私邸。',
+    quote: '遵义会议是一个关键，对中国革命的影响非常之大。 — 毛泽东',
+    figures: [
+      { val: '3天', label: '会议时长' },
+      { val: '20人', label: '参会人数' },
+      { val: '转折点', label: '历史意义' },
+      { val: '1935', label: '召开年份' }
+    ]
+  },
+  {
+    id: 'chishui',
+    name: '四渡赤水',
+    date: '1935年1月—3月',
+    type: 'crossing',
+    tag: '渡江',
+    lat: 28.59, lng: 105.70,
+    province: '贵州/四川/云南',
+    desc: '四渡赤水是毛泽东军事生涯中的"得意之笔"。红军在川黔滇三省边界，面对国民党40万大军围追堵截，仅以3万余人四次渡过赤水河，声东击西，大范围迂回，成功跳出包围圈。一渡赤水西进扎西，二渡赤水东返遵义，三渡赤水再入川南，四渡赤水东出贵州，彻底打乱了敌军部署。',
+    quote: '四渡赤水才是我的得意之笔。 — 毛泽东',
+    figures: [
+      { val: '4次', label: '渡河次数' },
+      { val: '3万', label: '红军兵力' },
+      { val: '40万', label: '敌军兵力' },
+      { val: '3省', label: '转战区域' }
+    ]
+  },
+  {
+    id: 'jinsha',
+    name: '巧渡金沙江',
+    date: '1935年5月3日—9日',
+    type: 'crossing',
+    tag: '渡江',
+    lat: 26.30, lng: 102.90,
+    province: '云南·禄劝',
+    desc: '红军在皎平渡巧渡金沙江，仅靠7只小船，经过7天7夜，2万多人的部队全部安全渡过金沙江，摆脱了数十万敌军的围追堵截。皎平渡位于云南省禄劝县和四川省会理县交界处，江面宽阔，水流湍急。这是长征中一次极为成功的渡江行动，体现了红军指挥员的高超智慧。',
+    quote: '金沙水拍云崖暖。 — 毛泽东《七律·长征》',
+    figures: [
+      { val: '7只', label: '渡船数量' },
+      { val: '7天7夜', label: '渡江时长' },
+      { val: '2万+', label: '渡江人数' },
+      { val: '0伤亡', label: '渡江损失' }
+    ]
+  },
+  {
+    id: 'dadu',
+    name: '强渡大渡河',
+    date: '1935年5月24日—25日',
+    type: 'battle',
+    tag: '战斗',
+    lat: 29.55, lng: 102.10,
+    province: '四川·石棉',
+    desc: '大渡河水流湍急，两岸悬崖峭壁。红军先遣队17勇士在安顺场强渡大渡河，冒着敌人的密集火力，乘坐唯一的一条小船冲向对岸，为后续部队打开了通路。太平天国石达开曾在此全军覆没，蒋介石妄图让红军成为"石达开第二"，但红军以英勇无畏打破了这一企图。安顺场位于四川省石棉县。',
+    quote: '大渡桥横铁索寒。 — 毛泽东《七律·长征》',
+    figures: [
+      { val: '17', label: '勇士人数' },
+      { val: '1只', label: '渡船' },
+      { val: '1863', label: '石达开覆灭' },
+      { val: '72年', label: '历史间隔' }
+    ]
+  },
+  {
+    id: 'luding',
+    name: '飞夺泸定桥',
+    date: '1935年5月29日',
+    type: 'battle',
+    tag: '战斗',
+    lat: 29.915, lng: 102.235,
+    province: '四川·泸定',
+    desc: '泸定桥横跨大渡河，是一座由13根铁索悬吊的桥，始建于清康熙四十四年（1705年）。敌军已拆去桥板，只剩铁索，对岸还有重兵把守。22名红军突击队员冒着枪林弹雨，攀踏铁索，冲向对岸，一举夺桥。红四团昼夜急行军240里，创下了步兵行军的世界纪录。',
+    quote: '飞夺泸定桥，是长征中一次决定性的作战行动。 — 《中国工农红军长征史》',
+    figures: [
+      { val: '22', label: '突击队员' },
+      { val: '13根', label: '铁索' },
+      { val: '240里', label: '昼夜急行军' },
+      { val: '101m', label: '桥长' }
+    ]
+  },
+  {
+    id: 'jiajin',
+    name: '翻越夹金山',
+    date: '1935年6月12日',
+    type: 'event',
+    tag: '雪山',
+    lat: 30.40, lng: 102.70,
+    province: '四川·宝兴',
+    desc: '夹金山海拔4124米，终年积雪，空气稀薄。红军战士大多来自南方，身着单衣，从未见过大雪。翻越雪山时，许多人因严寒和缺氧倒在雪地里再也没有起来。战士们互相搀扶，用辣椒和酒御寒，终于翻越了这座"神仙山"。这是红军长征中翻越的第一座大雪山，位于四川省宝兴县与小金县交界处。',
+    quote: '夹金山，夹金山，鸟儿飞不过，人不可攀。要想越过夹金山，除非神仙到人间。 — 当地民谣',
+    figures: [
+      { val: '4124m', label: '海拔高度' },
+      { val: '第1座', label: '大雪山' },
+      { val: '单衣', label: '御寒装备' },
+      { val: '6月', label: '翻越月份' }
+    ]
+  },
+  {
+    id: 'mougong',
+    name: '懋功会师',
+    date: '1935年6月14日',
+    type: 'meeting',
+    tag: '会师',
+    lat: 31.00, lng: 102.37,
+    province: '四川·小金',
+    desc: '中央红军与红四方面军在四川懋功（今小金县）达维镇胜利会师。两军战友紧紧拥抱，欢声雷动。这是长征中第一次大会师，极大地鼓舞了全军士气。然而，会师后张国焘与中央在战略方向上产生严重分歧，张国焘主张南下，中央坚持北上，为后来的分裂埋下了伏笔。',
+    quote: '会师的喜悦是短暂的，但两军战友的情谊是永恒的。 — 杨尚昆回忆录',
+    figures: [
+      { val: '2军', label: '会师部队' },
+      { val: '10万+', label: '总兵力' },
+      { val: '达维镇', label: '会师地点' },
+      { val: '6月14日', label: '会师日期' }
+    ]
+  },
+  {
+    id: 'caodi',
+    name: '过草地',
+    date: '1935年8月21日',
+    type: 'event',
+    tag: '草地',
+    lat: 33.10, lng: 103.30,
+    province: '四川·松潘',
+    desc: '松潘草地位于青藏高原与四川盆地交界处，是一片广袤的沼泽地，面积约1.52万平方公里。表面看似绿草如茵，实则是深不见底的泥潭。红军在草地中行军7天7夜，没有粮食就吃草根、啃树皮、煮皮带。无数战士陷入泥沼再也没能出来，或者因饥饿和疾病倒在草地上。过草地是长征中最艰苦的历程之一。',
+    quote: '草地是长征中最艰苦的一段，比翻雪山还难。 — 《长征——前所未闻的故事》哈里森·索尔兹伯里',
+    figures: [
+      { val: '7天7夜', label: '行军时长' },
+      { val: '500里', label: '草地纵深' },
+      { val: '3500m', label: '平均海拔' },
+      { val: '无数', label: '牺牲战士' }
+    ]
+  },
+  {
+    id: 'lazikou',
+    name: '腊子口战役',
+    date: '1935年9月16日',
+    type: 'battle',
+    tag: '战役',
+    lat: 34.10, lng: 103.90,
+    province: '甘肃·迭部',
+    desc: '腊子口位于甘肃省迭部县，是红军北上抗日的唯一通道。两侧悬崖峭壁，中间只有8米宽的隘口，敌军重兵把守。红军正面佯攻，另派小分队从悬崖攀上敌军侧后，两面夹击，一举突破天险腊子口。此战打通了红军北上的通道，是长征中的关键一战。',
+    quote: '腊子口一开，全盘棋都活了。 — 聂荣臻',
+    figures: [
+      { val: '8米', label: '隘口宽度' },
+      { val: '悬崖', label: '两侧地形' },
+      { val: '夹击', label: '战术方式' },
+      { val: '北上', label: '战略意义' }
+    ]
+  },
+  {
+    id: 'wuqi',
+    name: '吴起镇会师',
+    date: '1935年10月19日',
+    type: 'meeting',
+    tag: '会师',
+    lat: 36.93, lng: 108.17,
+    province: '陕西·吴起',
+    desc: '中央红军到达陕北吴起镇（今陕西省吴起县），与陕北红军胜利会师。中央红军长征历时一年，纵横11省，行程二万五千里，终于找到了落脚点。毛泽东在此写下了著名的《七律·长征》，用"更喜岷山千里雪，三军过后尽开颜"表达了胜利的喜悦。吴起镇也因此成为长征胜利的象征。',
+    quote: '更喜岷山千里雪，三军过后尽开颜。 — 毛泽东《七律·长征》',
+    figures: [
+      { val: '1年', label: '行军时长' },
+      { val: '11省', label: '途经省份' },
+      { val: '25000里', label: '总行程' },
+      { val: '7000', label: '到达人数' }
+    ]
+  },
+  {
+    id: 'huining',
+    name: '会宁会师',
+    date: '1936年10月9日',
+    type: 'meeting',
+    tag: '会师',
+    lat: 35.69, lng: 105.05,
+    province: '甘肃·会宁',
+    desc: '红一、红四方面军在甘肃会宁胜利会师。随后，红二方面军也到达将台堡（今宁夏西吉县）与红一方面军会师。三大主力红军的会师，标志着历时两年的长征胜利结束。这是中国革命史上具有伟大历史意义的事件，宣告了国民党反动派围追堵截红军的彻底失败。会宁古城因此被称为"会师圣地"。',
+    quote: '三大主力会师，是长征胜利的标志，也是中国革命新局面的开始。 — 《中国共产党历史》',
+    figures: [
+      { val: '3大', label: '主力会师' },
+      { val: '2年', label: '长征历时' },
+      { val: '1936', label: '胜利年份' },
+      { val: '甘肃', label: '会师地点' }
+    ]
+  },
+  {
+    id: 'yanan',
+    name: '延安——革命圣地',
+    date: '1937年1月13日',
+    type: 'event',
+    tag: '终点',
+    lat: 36.59, lng: 109.49,
+    province: '陕西·延安',
+    desc: '中共中央进驻延安，从此延安成为中国革命的指导中心和战略总后方。在延安的13年间，中国共产党领导了抗日战争和解放战争，开展了整风运动、大生产运动，确立了毛泽东思想的指导地位。延安精神——自力更生、艰苦奋斗、实事求是、全心全意为人民服务——成为中国共产党宝贵的精神财富。宝塔山、延河水、窑洞，成为革命圣地的象征。',
+    quote: '延安的窑洞有马列主义。 — 毛泽东',
+    figures: [
+      { val: '13年', label: '驻留时间' },
+      { val: '1937-1947', label: '时期' },
+      { val: '革命圣地', label: '历史地位' },
+      { val: '延安精神', label: '精神遗产' }
+    ]
+  }
+];
+
+const centralRoute = [
+  [25.886,116.035],[25.90,115.70],[25.85,115.30],[25.70,114.90],[25.55,114.50],
+  [25.40,114.10],[25.35,113.60],[25.40,113.10],[25.50,112.60],[25.55,112.10],
+  [25.61,111.50],[25.61,110.71],[25.70,110.30],[25.85,109.90],[26.00,109.50],
+  [26.20,109.10],[26.40,108.70],[26.60,108.30],[26.80,107.90],[27.00,107.50],
+  [27.20,107.20],[27.40,107.00],[27.725,106.928],[27.90,106.80],[28.10,106.60],
+  [28.30,106.30],[28.59,105.70],[28.40,105.90],[28.20,106.10],[28.00,106.30],
+  [27.80,106.50],[27.60,106.70],[27.40,106.50],[27.20,106.20],[27.00,105.90],
+  [26.80,105.60],[26.60,105.30],[26.40,105.00],[26.30,104.60],[26.20,104.20],
+  [26.10,103.80],[26.15,103.40],[26.30,102.90],[26.60,102.70],[26.90,102.50],
+  [27.20,102.40],[27.50,102.30],[27.80,102.20],[28.10,102.10],[28.40,102.05],
+  [28.70,102.00],[29.00,102.00],[29.30,102.05],[29.55,102.10],[29.70,102.15],
+  [29.80,102.20],[29.915,102.235],[30.10,102.40],[30.25,102.55],[30.40,102.70],
+  [30.60,102.60],[30.80,102.50],[31.00,102.37],[31.20,102.50],[31.50,102.70],
+  [31.80,102.90],[32.10,103.00],[32.40,103.10],[32.70,103.20],[33.10,103.30],
+  [33.40,103.50],[33.70,103.70],[34.10,103.90],[34.40,104.20],[34.70,104.60],
+  [35.00,105.00],[35.30,105.30],[35.50,105.60],[35.69,105.05],[35.80,105.50],
+  [36.00,106.00],[36.20,106.50],[36.40,107.00],[36.60,107.50],[36.80,108.00],
+  [36.93,108.17],[36.80,108.50],[36.70,108.80],[36.59,109.49]
+];
+
+const secondRoute = [
+  [28.00,110.00],[27.80,109.50],[27.50,109.00],[27.20,108.50],[26.90,108.00],
+  [26.60,107.50],[26.30,107.00],[26.00,106.50],[25.70,106.00],[25.40,105.50],
+  [25.10,105.00],[24.80,104.50],[24.50,104.00],[24.30,103.50],[24.10,103.00],
+  [24.00,102.50],[24.20,102.00],[24.50,101.50],[24.80,101.00],[25.20,100.50],
+  [25.60,100.20],[26.00,100.00],[26.40,100.20],[26.80,100.50],[27.20,100.80],
+  [27.60,101.10],[28.00,101.50],[28.40,101.80],[28.80,102.10],[29.20,102.30],
+  [29.60,102.50],[30.00,102.80],[30.40,103.00],[30.80,103.30],[31.20,103.50],
+  [31.60,103.80],[32.00,104.00],[32.40,104.20],[32.80,104.40],[33.20,104.50],
+  [33.60,104.60],[34.00,104.80],[34.40,105.00],[34.80,105.10],[35.20,105.00],
+  [35.69,105.05]
+];
+
+const fourthRoute = [
+  [31.00,102.37],[31.20,101.80],[31.40,101.30],[31.60,100.80],[31.80,100.30],
+  [32.00,100.00],[32.20,99.70],[32.40,99.40],[32.60,99.10],[32.40,99.50],
+  [32.20,100.00],[32.00,100.50],[31.80,101.00],[31.60,101.50],[31.40,102.00],
+  [31.60,102.50],[32.00,103.00],[32.40,103.20],[32.80,103.40],[33.10,103.30]
+];
+
+let map;
+let leafletMarkers = {};
+let pulseMarkers = {};
+let currentEvent = null;
+let isPlaying = false;
+let playIndex = 0;
+let playTimer = null;
+let routePolyline;
+let routeDrawn = 0;
+let currentBaseLayer;
+
+const PI = Math.PI;
+const A = 6378245.0;
+const EE = 0.00669342162296594323;
+
+function outOfChina(lat, lng) {
+  return !(lng > 73.66 && lng < 135.05 && lat > 3.86 && lat < 53.55);
+}
+
+function transformLat(x, y) {
+  let ret = -100.0 + 2.0*x + 3.0*y + 0.2*y*y + 0.1*x*y + 0.2*Math.sqrt(Math.abs(x));
+  ret += (20.0*Math.sin(6.0*x*PI) + 20.0*Math.sin(2.0*x*PI)) * 2.0 / 3.0;
+  ret += (20.0*Math.sin(y*PI) + 40.0*Math.sin(y/3.0*PI)) * 2.0 / 3.0;
+  ret += (160.0*Math.sin(y/12.0*PI) + 320.0*Math.sin(y*PI/30.0)) * 2.0 / 3.0;
+  return ret;
+}
+
+function transformLng(x, y) {
+  let ret = 300.0 + x + 2.0*y + 0.1*x*x + 0.1*x*y + 0.1*Math.sqrt(Math.abs(x));
+  ret += (20.0*Math.sin(6.0*x*PI) + 20.0*Math.sin(2.0*x*PI)) * 2.0 / 3.0;
+  ret += (20.0*Math.sin(x*PI) + 40.0*Math.sin(x/3.0*PI)) * 2.0 / 3.0;
+  ret += (150.0*Math.sin(x/12.0*PI) + 300.0*Math.sin(x/30.0*PI)) * 2.0 / 3.0;
+  return ret;
+}
+
+function wgs84ToGcj02(lat, lng) {
+  if (outOfChina(lat, lng)) return [lat, lng];
+  let dLat = transformLat(lng - 105.0, lat - 35.0);
+  let dLng = transformLng(lng - 105.0, lat - 35.0);
+  const radLat = lat / 180.0 * PI;
+  let magic = Math.sin(radLat);
+  magic = 1 - EE * magic * magic;
+  const sqrtMagic = Math.sqrt(magic);
+  dLat = (dLat * 180.0) / ((A * (1 - EE)) / (magic * sqrtMagic) * PI);
+  dLng = (dLng * 180.0) / (A / sqrtMagic * Math.cos(radLat) * PI);
+  return [lat + dLat, lng + dLng];
+}
+
+function convertRoute(route) {
+  return route.map(p => wgs84ToGcj02(p[0], p[1]));
+}
+
+const centralRouteGCJ = convertRoute(centralRoute);
+const secondRouteGCJ = convertRoute(secondRoute);
+const fourthRouteGCJ = convertRoute(fourthRoute);
+
+events.forEach(e => {
+  const [lat, lng] = wgs84ToGcj02(e.lat, e.lng);
+  e.latGCJ = lat;
+  e.lngGCJ = lng;
+});
+
+function initMap() {
+  map = L.map('map', {
+    center: wgs84ToGcj02(30.5, 104.5),
+    zoom: 6,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  const amapNormal = L.tileLayer('https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=7', {
+    attribution: '&copy; <a href="https://lbs.amap.com/">高德地图</a>',
+    subdomains: '1234',
+    maxZoom: 18
+  });
+
+  const amapSatellite = L.tileLayer('https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=6', {
+    attribution: '&copy; <a href="https://lbs.amap.com/">高德地图</a>',
+    subdomains: '1234',
+    maxZoom: 18
+  });
+
+  const amapSatLabel = L.layerGroup([
+    L.tileLayer('https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=6', {
+      subdomains: '1234',
+      maxZoom: 18
+    }),
+    L.tileLayer('https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=8', {
+      subdomains: '1234',
+      maxZoom: 18
+    })
+  ]);
+
+  amapNormal.addTo(map);
+  currentBaseLayer = amapNormal;
+
+  L.control.layers({
+    '高德标准': amapNormal,
+    '高德卫星': amapSatellite,
+    '卫星+标注': amapSatLabel
+  }, null, { position: 'topright' }).addTo(map);
+
+  L.polyline(centralRouteGCJ, {
+    color: 'rgba(185,28,28,0.12)',
+    weight: 8,
+    lineCap: 'round',
+    lineJoin: 'round'
+  }).addTo(map);
+
+  L.polyline(secondRouteGCJ, {
+    color: 'rgba(180,83,9,0.08)',
+    weight: 4,
+    lineCap: 'round',
+    lineJoin: 'round',
+    dashArray: '8,6'
+  }).addTo(map);
+
+  L.polyline(fourthRouteGCJ, {
+    color: 'rgba(37,99,235,0.08)',
+    weight: 4,
+    lineCap: 'round',
+    lineJoin: 'round',
+    dashArray: '8,6'
+  }).addTo(map);
+
+  routePolyline = L.polyline([], {
+    color: '#b91c1c',
+    weight: 3,
+    lineCap: 'round',
+    lineJoin: 'round',
+    opacity: 0.85
+  }).addTo(map);
+
+  events.forEach(e => {
+    const color = getColor(e.type);
+    const size = e.type === 'battle' ? 14 : e.type === 'meeting' ? 13 : 11;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="marker-icon ${e.type}" id="marker-${e.id}" style="width:${size}px;height:${size}px;"></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2]
+    });
+
+    const marker = L.marker([e.latGCJ, e.lngGCJ], { icon: icon })
+      .addTo(map)
+      .on('click', () => selectEvent(e.id));
+
+    const pulseIcon = L.divIcon({
+      className: '',
+      html: `<div class="pulse-icon" id="pulse-${e.id}" style="width:${size+8}px;height:${size+8}px;background:${color};opacity:0;"></div>`,
+      iconSize: [size+8, size+8],
+      iconAnchor: [(size+8)/2, (size+8)/2]
+    });
+
+    const pulseMarker = L.marker([e.latGCJ, e.lngGCJ], { icon: pulseIcon, interactive: false })
+      .addTo(map);
+
+    marker.bindPopup(`
+      <div class="popup-title">${e.name}</div>
+      <div class="popup-date">${e.date}</div>
+      <span class="popup-tag tag-${e.type}">${e.tag}</span>
+    `, { closeButton: false, className: '' });
+
+    leafletMarkers[e.id] = marker;
+    pulseMarkers[e.id] = pulseMarker;
+  });
+
+  animateRoute();
+}
+
+function animateRoute() {
+  routeDrawn = 0;
+  const totalPoints = centralRouteGCJ.length;
+  const step = () => {
+    if (routeDrawn < totalPoints) {
+      routeDrawn += 2;
+      if (routeDrawn > totalPoints) routeDrawn = totalPoints;
+      routePolyline.setLatLngs(centralRouteGCJ.slice(0, routeDrawn));
+      requestAnimationFrame(step);
+    }
+  };
+  setTimeout(step, 500);
+}
+
+function getColor(type) {
+  const colors = { battle: '#dc2626', meeting: '#d97706', crossing: '#2563eb', event: '#6b7280' };
+  return colors[type] || '#6b7280';
+}
+
+function getTagClass(type) {
+  const m = { battle: 'tag-battle', meeting: 'tag-meeting', crossing: 'tag-crossing', event: 'tag-event' };
+  return m[type] || 'tag-event';
+}
+
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  container.innerHTML = events.map((e, i) => `
+    <div class="timeline-item ${e.type}" data-id="${e.id}" onclick="selectEvent('${e.id}')">
+      <div class="timeline-dot-col">
+        <div class="timeline-dot"></div>
+        ${i < events.length - 1 ? '<div class="timeline-line"></div>' : ''}
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-date">${e.date}</div>
+        <div class="timeline-title">${e.name}</div>
+        <span class="timeline-tag tag-${e.type}">${e.tag}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectEvent(id) {
+  const e = events.find(ev => ev.id === id);
+  if (!e) return;
+
+  if (currentEvent === id) {
+    closeDetail();
+    return;
+  }
+
+  currentEvent = id;
+
+  document.querySelectorAll('.timeline-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+
+  Object.keys(leafletMarkers).forEach(mid => {
+    const el = document.getElementById('marker-' + mid);
+    const pulse = document.getElementById('pulse-' + mid);
+    if (el) el.classList.toggle('active', mid === id);
+    if (pulse) pulse.style.opacity = mid === id ? '0.5' : '0';
+  });
+
+  const idx = events.findIndex(ev => ev.id === id);
+  const progress = ((idx + 1) / events.length) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+
+  map.flyTo([e.latGCJ, e.lngGCJ], 9, { duration: 1.0 });
+
+  showDetail(e);
+
+  const activeItem = document.querySelector(`.timeline-item[data-id="${id}"]`);
+  if (activeItem) {
+    activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function showDetail(e) {
+  document.getElementById('detailEmpty').style.display = 'none';
+  const content = document.getElementById('detailContent');
+  content.style.display = 'block';
+
+  content.innerHTML = `
+    <span class="detail-tag tag-${e.type}">${e.tag}</span>
+    <div class="detail-date">${e.date}</div>
+    <div class="detail-province">${e.province}</div>
+    <div class="detail-title">${e.name}</div>
+    <div class="detail-desc">${e.desc}</div>
+    ${e.quote ? `<div class="detail-quote">${e.quote}</div>` : ''}
+    ${e.figures ? `
+      <div class="detail-figure">
+        <div class="figure-title">关键数据</div>
+        <div class="figure-grid">
+          ${e.figures.map(f => `
+            <div class="figure-item">
+              <div class="figure-val">${f.val}</div>
+              <div class="figure-label">${f.label}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+  `;
+
+  setTimeout(() => {
+    const panel = document.getElementById('detailPanel');
+    panel.scrollTop = 0;
+  }, 50);
+}
+
+function closeDetail() {
+  document.getElementById('detailEmpty').style.display = 'flex';
+  document.getElementById('detailContent').style.display = 'none';
+  currentEvent = null;
+  document.querySelectorAll('.timeline-item').forEach(el => el.classList.remove('active'));
+  Object.keys(leafletMarkers).forEach(mid => {
+    const el = document.getElementById('marker-' + mid);
+    const pulse = document.getElementById('pulse-' + mid);
+    if (el) el.classList.remove('active');
+    if (pulse) pulse.style.opacity = '0';
+  });
+}
+
+function togglePlay() {
+  if (isPlaying) { stopPlay(); } else { startPlay(); }
+}
+
+function startPlay() {
+  isPlaying = true;
+  playIndex = 0;
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('playLabel').innerHTML = '正在 <span>播放</span>';
+  playNext();
+}
+
+function playNext() {
+  if (!isPlaying || playIndex >= events.length) { stopPlay(); return; }
+  selectEvent(events[playIndex].id);
+  playIndex++;
+  playTimer = setTimeout(playNext, 5000);
+}
+
+function stopPlay() {
+  isPlaying = false;
+  clearTimeout(playTimer);
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('playLabel').innerHTML = '点击 <span>播放</span> 重走长征路';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeDetail();
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    const idx = currentEvent ? events.findIndex(ev => ev.id === currentEvent) : -1;
+    selectEvent(events[Math.min(idx + 1, events.length - 1)].id);
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const idx = currentEvent ? events.findIndex(ev => ev.id === currentEvent) : 0;
+    selectEvent(events[Math.max(idx - 1, 0)].id);
+  }
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+});
+
+renderTimeline();
+initMap();
+</script>
+</body>
+</html>
